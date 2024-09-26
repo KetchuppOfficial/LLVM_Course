@@ -3,7 +3,7 @@
 
 enum
 {
-	kPoints = 100,
+    kPoints = 100,
 };
 
 void lloyd_relaxation();

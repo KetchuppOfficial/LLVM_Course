@@ -8,7 +8,7 @@
 // ax + by + c = 0
 typedef struct line_s
 {
-	int a, b, c;
+    int a, b, c;
 } Line;
 
 void compute_normal(Line *perp, const Point *p_1, const Point *p_2);

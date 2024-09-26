@@ -3,9 +3,9 @@
 
 enum
 {
-	kWidth = 720,
-	kHeight = 720,
-	kMargin = 10
+    kWidth = 720,
+    kHeight = 720,
+    kMargin = 10
 };
 
 int init_screen();
