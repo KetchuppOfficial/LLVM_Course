@@ -13,7 +13,7 @@ static inline bool within_range(int x, int from, int to)
 	return from < x && x < to;
 }
 
-static int clamp(int value, int min, int max)
+static inline int clamp(int value, int min, int max)
 {
 	assert(min < max);
 	if (value < min)
