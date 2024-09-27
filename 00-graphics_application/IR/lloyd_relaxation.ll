@@ -235,12 +235,12 @@ define dso_local void @lloyd_relaxation() local_unnamed_addr #0 {
   %162 = mul nsw i32 %155, %133
   %163 = sub nsw i32 %161, %162
   %164 = sdiv i32 %163, %153
-  %165 = add i32 %160, -1
-  %166 = icmp ult i32 %165, 719
-  %167 = add i32 %164, -1
-  %168 = icmp ult i32 %167, 719
-  %169 = select i1 %166, i1 %168, i1 false
-  br i1 %169, label %170, label %181
+  %165 = add i32 %160, -720
+  %166 = icmp ult i32 %165, -719
+  %167 = add i32 %164, -720
+  %168 = icmp ult i32 %167, -719
+  %169 = select i1 %166, i1 true, i1 %168
+  br i1 %169, label %181, label %170
 
 170:                                              ; preds = %152
   %171 = sext i32 %143 to i64
@@ -267,8 +267,8 @@ define dso_local void @lloyd_relaxation() local_unnamed_addr #0 {
 185:                                              ; preds = %138
   %186 = load i32, ptr %136, align 4, !tbaa !22
   %187 = sdiv i32 %186, %133
-  %188 = icmp ugt i32 %187, -720
-  br i1 %188, label %189, label %197
+  %188 = icmp ult i32 %187, -719
+  br i1 %188, label %197, label %189
 
 189:                                              ; preds = %185
   %190 = sub nsw i32 0, %187
@@ -292,9 +292,9 @@ define dso_local void @lloyd_relaxation() local_unnamed_addr #0 {
   %201 = sub nsw i32 0, %135
   %202 = load i32, ptr %136, align 4, !tbaa !22
   %203 = sdiv i32 %202, %201
-  %204 = add i32 %203, -1
-  %205 = icmp ult i32 %204, 719
-  br i1 %205, label %206, label %214
+  %204 = add i32 %203, -720
+  %205 = icmp ult i32 %204, -719
+  br i1 %205, label %214, label %206
 
 206:                                              ; preds = %200
   %207 = sext i32 %198 to i64
@@ -314,9 +314,9 @@ define dso_local void @lloyd_relaxation() local_unnamed_addr #0 {
   %216 = mul i32 %133, 720
   %217 = add i32 %202, %216
   %218 = sdiv i32 %217, %201
-  %219 = add i32 %218, -1
-  %220 = icmp ult i32 %219, 719
-  br i1 %220, label %221, label %233
+  %219 = add i32 %218, -720
+  %220 = icmp ult i32 %219, -719
+  br i1 %220, label %233, label %221
 
 221:                                              ; preds = %214
   %222 = mul nsw i32 %135, -720
@@ -344,9 +344,9 @@ define dso_local void @lloyd_relaxation() local_unnamed_addr #0 {
   %237 = load i32, ptr %136, align 4, !tbaa !22
   %238 = sub nsw i32 %236, %237
   %239 = sdiv i32 %238, %133
-  %240 = add i32 %239, -1
-  %241 = icmp ult i32 %240, 719
-  br i1 %241, label %242, label %250
+  %240 = add i32 %239, -720
+  %241 = icmp ult i32 %240, -719
+  br i1 %241, label %250, label %242
 
 242:                                              ; preds = %235
   %243 = sext i32 %234 to i64
@@ -455,15 +455,13 @@ define dso_local void @lloyd_relaxation() local_unnamed_addr #0 {
   %316 = icmp sgt i32 %314, 0
   %317 = icmp sgt i32 %315, 0
   %318 = select i1 %316, i1 %317, i1 false
-  br i1 %318, label %323, label %319
-
-319:                                              ; preds = %313
-  %320 = icmp slt i32 %314, 0
-  %321 = icmp slt i32 %315, 0
-  %322 = select i1 %320, i1 %321, i1 false
+  %319 = icmp slt i32 %314, 0
+  %320 = icmp slt i32 %315, 0
+  %321 = select i1 %319, i1 %320, i1 false
+  %322 = select i1 %318, i1 true, i1 %321
   br i1 %322, label %323, label %418
 
-323:                                              ; preds = %319, %313, %311
+323:                                              ; preds = %313, %311
   %324 = icmp eq i32 %258, -3
   br i1 %324, label %339, label %325
 
@@ -477,15 +475,13 @@ define dso_local void @lloyd_relaxation() local_unnamed_addr #0 {
   %330 = icmp sgt i32 %328, 0
   %331 = icmp sgt i32 %329, 0
   %332 = select i1 %330, i1 %331, i1 false
-  br i1 %332, label %337, label %333
-
-333:                                              ; preds = %327
-  %334 = icmp slt i32 %328, 0
-  %335 = icmp slt i32 %329, 0
-  %336 = select i1 %334, i1 %335, i1 false
+  %333 = icmp slt i32 %328, 0
+  %334 = icmp slt i32 %329, 0
+  %335 = select i1 %333, i1 %334, i1 false
+  %336 = select i1 %332, i1 true, i1 %335
   br i1 %336, label %337, label %418
 
-337:                                              ; preds = %333, %327, %325
+337:                                              ; preds = %327, %325
   %338 = icmp eq i32 %258, -2
   br i1 %338, label %355, label %339
 
@@ -499,15 +495,13 @@ define dso_local void @lloyd_relaxation() local_unnamed_addr #0 {
   %344 = icmp sgt i32 %342, 720
   %345 = icmp sgt i32 %343, 720
   %346 = select i1 %344, i1 %345, i1 false
-  br i1 %346, label %351, label %347
-
-347:                                              ; preds = %341
-  %348 = icmp slt i32 %342, 720
-  %349 = icmp slt i32 %343, 720
-  %350 = select i1 %348, i1 %349, i1 false
+  %347 = icmp slt i32 %342, 720
+  %348 = icmp slt i32 %343, 720
+  %349 = select i1 %347, i1 %348, i1 false
+  %350 = select i1 %346, i1 true, i1 %349
   br i1 %350, label %351, label %418
 
-351:                                              ; preds = %347, %341, %339
+351:                                              ; preds = %341, %339
   %352 = icmp eq i32 %258, -1
   %353 = icmp eq i32 %263, -1
   %354 = select i1 %352, i1 true, i1 %353
@@ -523,15 +517,13 @@ define dso_local void @lloyd_relaxation() local_unnamed_addr #0 {
   %360 = icmp sgt i32 %358, 720
   %361 = icmp sgt i32 %359, 720
   %362 = select i1 %360, i1 %361, i1 false
-  br i1 %362, label %367, label %363
-
-363:                                              ; preds = %357
-  %364 = icmp slt i32 %358, 720
-  %365 = icmp slt i32 %359, 720
-  %366 = select i1 %364, i1 %365, i1 false
+  %363 = icmp slt i32 %358, 720
+  %364 = icmp slt i32 %359, 720
+  %365 = select i1 %363, i1 %364, i1 false
+  %366 = select i1 %362, i1 true, i1 %365
   br i1 %366, label %367, label %418
 
-367:                                              ; preds = %363, %357, %355, %351
+367:                                              ; preds = %357, %355, %351
   %368 = zext i32 %263 to i64
   br label %369
 
@@ -574,15 +566,13 @@ define dso_local void @lloyd_relaxation() local_unnamed_addr #0 {
   %403 = icmp sgt i32 %397, 0
   %404 = icmp sgt i32 %402, 0
   %405 = select i1 %403, i1 %404, i1 false
-  br i1 %405, label %410, label %406
-
-406:                                              ; preds = %374
-  %407 = icmp slt i32 %397, 0
-  %408 = icmp slt i32 %402, 0
-  %409 = select i1 %407, i1 %408, i1 false
+  %406 = icmp slt i32 %397, 0
+  %407 = icmp slt i32 %402, 0
+  %408 = select i1 %406, i1 %407, i1 false
+  %409 = select i1 %405, i1 true, i1 %408
   br i1 %409, label %410, label %418
 
-410:                                              ; preds = %406, %374, %369
+410:                                              ; preds = %374, %369
   %411 = add nuw nsw i64 %370, 1
   %412 = icmp eq i64 %411, 99
   br i1 %412, label %413, label %369, !llvm.loop !35
@@ -595,8 +585,8 @@ define dso_local void @lloyd_relaxation() local_unnamed_addr #0 {
   store i64 %417, ptr %416, align 4
   br label %418
 
-418:                                              ; preds = %406, %413, %363, %347, %333, %319
-  %419 = phi i32 [ %414, %413 ], [ %256, %363 ], [ %256, %347 ], [ %256, %333 ], [ %256, %319 ], [ %256, %406 ]
+418:                                              ; preds = %374, %413, %357, %341, %327, %313
+  %419 = phi i32 [ %414, %413 ], [ %256, %357 ], [ %256, %341 ], [ %256, %327 ], [ %256, %313 ], [ %256, %374 ]
   %420 = getelementptr inbounds %struct.tagged_point_s, ptr %255, i64 1
   %421 = icmp eq ptr %420, %121
   br i1 %421, label %264, label %254, !llvm.loop !36

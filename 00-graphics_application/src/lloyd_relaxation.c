@@ -1,5 +1,4 @@
 #include <assert.h>
-#include <stdbool.h>
 
 #include "graphics.h"
 
@@ -12,7 +11,7 @@ enum
 
 static inline int midpoint(int x, int y) { return (x + y) / 2; }
 
-static inline bool within_range(int x, int from, int to)
+static inline int within_range(int x, int from, int to)
 {
     assert(from < to);
     return from < x && x < to;
@@ -76,24 +75,24 @@ static void compute_normal(Line *perp, const Point *p_1, const Point *p_2)
     perp->c = a_1 * y_0 - a_2 * x_0;
 }
 
-static bool lines_intersection(const Line *l_1, const Line *l_2, Point *p)
+static int lines_intersection(const Line *l_1, const Line *l_2, Point *p)
 {
     assert(l_1);
     assert(l_2);
 
     const int det = l_1->a * l_2->b - l_2->a * l_1->b;
     if (det == 0)
-        return false;
+        return 0;
 
     assert(p);
 
     p->x = (l_1->b * l_2->c - l_2->b * l_1->c) / det;
     p->y = (l_2->a * l_1->c - l_1->a * l_2->c) / det;
 
-    return true;
+    return 1;
 }
 
-static bool on_the_same_side(const Line *l, const Point *p_1, const Point *p_2)
+static int on_the_same_side(const Line *l, const Point *p_1, const Point *p_2)
 {
     const int denom = l->a * l->a + l->b * l->b;
     assert(denom != 0);
@@ -139,7 +138,7 @@ typedef struct tagged_point_s
     int second_perp;
 } TaggedPoint;
 
-static inline bool has_tag(const TaggedPoint *p, int tag)
+static inline int has_tag(const TaggedPoint *p, int tag)
 {
     assert(p);
     return p->first_perp == tag || p->second_perp == tag;
@@ -288,14 +287,14 @@ static Polygon *get_cells(const Point *points)
         int n_vertices = 0;
         for (const TaggedPoint *inter = intersections; inter != intersections + n_points; ++inter)
         {
-            bool add_to_polygon = true;
+            int add_to_polygon = 1;
 
             for (int perp_i = 0; perp_i != 4; ++perp_i)
             {
                 if (!has_tag(inter, perp_i - 4) &&
                     !on_the_same_side(&borders[perp_i], &points[p_i], &inter->p))
                 {
-                    add_to_polygon = false;
+                    add_to_polygon = 0;
                     break;
                 }
             }
@@ -308,7 +307,7 @@ static Polygon *get_cells(const Point *points)
                 if (!has_tag(inter, perp_i) &&
                     !on_the_same_side(&perps[p_i * (kPoints - 1) + perp_i], &points[p_i], &inter->p))
                 {
-                    add_to_polygon = false;
+                    add_to_polygon = 0;
                     break;
                 }
             }
@@ -343,7 +342,7 @@ void lloyd_relaxation()
 {
     Point *points = generate_points();
 
-    while (true)
+    for(;;)
     {
         const Polygon *cells = get_cells(points);
 
