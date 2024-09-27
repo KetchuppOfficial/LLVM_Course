@@ -1,5 +1,6 @@
 #include "graphics.h"
-#include "lloyd_relaxation.h"
+
+void lloyd_relaxation();
 
 int main()
 {

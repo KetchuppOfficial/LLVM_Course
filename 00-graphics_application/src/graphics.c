@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <math.h>
 
 #include <SDL2/SDL.h>
 
@@ -80,3 +81,12 @@ void update_screen()
 }
 
 int Rand() { return rand(); }
+
+int atan2_int(int x, int y)
+{
+    static const double pi = 3.1415926535;
+    double res = atan2((double)x, (double)y) / pi;
+    if (res < 0)
+        res += 2.0;
+    return res * 180.0;
+}

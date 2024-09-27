@@ -16,5 +16,6 @@ void draw_line(int x_1, int y_1, int x_2, int y_2);
 void update_screen();
 
 int Rand();
+int atan2_int(int x, int y);
 
 #endif // INCLUDE_GRAPHICS_H
