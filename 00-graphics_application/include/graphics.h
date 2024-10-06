@@ -1,12 +1,7 @@
 #ifndef INCLUDE_GRAPHICS_H
 #define INCLUDE_GRAPHICS_H
 
-enum
-{
-    kWidth = 720,
-    kHeight = 720,
-    kMargin = 10
-};
+enum { kWidth = 720, kHeight = 720, kMargin = 10 };
 
 int init_screen();
 
