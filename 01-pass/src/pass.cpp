@@ -56,7 +56,7 @@ struct InstrTracer final : public PassInfoMixin<InstrTracer> {
 
 extern "C" LLVM_ATTRIBUTE_WEAK PassPluginLibraryInfo llvmGetPassPluginInfo() {
   auto callback = [](PassBuilder &PB) {
-    PB.registerPipelineStartEPCallback(
+    PB.registerOptimizerLastEPCallback(
         [](ModulePassManager &MPM, [[maybe_unused]] OptimizationLevel) {
           MPM.addPass(InstrTracer{});
           return true;
