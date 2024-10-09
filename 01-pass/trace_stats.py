@@ -17,16 +17,13 @@ def parse_options():
     "packs of 5 instructions. The result is represented as bar charts.")
 
     parser.add_argument("--executable", help = "path to an executable instrumented by LLVM pass "\
-                        "that prints opcodes of instructions", action = "store",
-                        required = True)
+                        "that prints opcodes of instructions", required = True)
     parser.add_argument("--duration", help = "time in seconds that tracing will last "\
-                        f"(default: {default_duration} s)", type = float, default = default_duration,
-                        action = "store")
+                        f"(default: {default_duration} s)", type = float, default = default_duration)
     parser.add_argument("--bars", help = f"the bars on each bar chart (default: {default_bars})",
-                        type = int, default = default_bars, action = "store")
+                        type = int, default = default_bars)
     parser.add_argument("--bars-dir", help = "path to the folder to places the bars in "\
-                        f"(default: {default_images})", dest = "dir", default = default_images,
-                        action = "store")
+                        f"(default: {default_images})", dest = "dir", default = default_images)
 
     args = parser.parse_args()
 
