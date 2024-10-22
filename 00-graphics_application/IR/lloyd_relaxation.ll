@@ -20,14 +20,14 @@ define dso_local void @lloyd_relaxation() local_unnamed_addr #0 {
 
 1:                                                ; preds = %1, %0
   %2 = phi i64 [ 0, %0 ], [ %15, %1 ]
-  %3 = tail call i32 (...) @Rand() #4
+  %3 = tail call i32 @Rand() #4
   %4 = srem i32 %3, 720
   %5 = icmp slt i32 %4, 10
   %6 = tail call i32 @llvm.umin.i32(i32 %4, i32 710)
   %7 = select i1 %5, i32 10, i32 %6
   %8 = getelementptr inbounds [100 x %struct.point_s], ptr @generate_points.points, i64 0, i64 %2
   store i32 %7, ptr %8, align 8, !tbaa !5
-  %9 = tail call i32 (...) @Rand() #4
+  %9 = tail call i32 @Rand() #4
   %10 = srem i32 %9, 720
   %11 = icmp slt i32 %10, 10
   %12 = tail call i32 @llvm.umin.i32(i32 %10, i32 710)
@@ -607,7 +607,7 @@ define dso_local void @lloyd_relaxation() local_unnamed_addr #0 {
   br i1 %430, label %432, label %423, !llvm.loop !37
 
 431:                                              ; preds = %441
-  tail call void (...) @update_screen() #4
+  tail call void @update_screen() #4
   br label %464
 
 432:                                              ; preds = %423, %441
@@ -742,12 +742,12 @@ declare void @draw_point(i32 noundef, i32 noundef) local_unnamed_addr #1
 
 declare void @draw_line(i32 noundef, i32 noundef, i32 noundef, i32 noundef) local_unnamed_addr #1
 
-declare void @update_screen(...) local_unnamed_addr #1
+declare void @update_screen() local_unnamed_addr #1
 
 ; Function Attrs: mustprogress nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #2
 
-declare i32 @Rand(...) local_unnamed_addr #1
+declare i32 @Rand() local_unnamed_addr #1
 
 declare i32 @atan2_int(i32 noundef, i32 noundef) local_unnamed_addr #1
 

@@ -289,7 +289,7 @@ static Polygon *get_cells(const Point *points) {
   return cells;
 }
 
-static Point *generate_points() {
+static Point *generate_points(void) {
   static Point points[kPoints];
 
   for (int i = 0; i != kPoints; ++i) {
@@ -300,7 +300,7 @@ static Point *generate_points() {
   return points;
 }
 
-void lloyd_relaxation() {
+void lloyd_relaxation(void) {
   Point *points = generate_points();
 
   for (;;) {

@@ -10,13 +10,13 @@
 static SDL_Window *window;
 static SDL_Renderer *renderer;
 
-static void app_exit() {
+static void app_exit(void) {
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);
   SDL_Quit();
 }
 
-int init_screen() {
+int init_screen(void) {
   if (SDL_Init(SDL_INIT_VIDEO) < 0) {
     fprintf(stderr, "Error initializing SDL: %s\n", SDL_GetError());
     return 1;
@@ -59,7 +59,7 @@ void draw_line(int x_1, int y_1, int x_2, int y_2) {
   SDL_RenderDrawLine(renderer, x_1, y_1, x_2, y_2);
 }
 
-void update_screen() {
+void update_screen(void) {
   SDL_Event event;
   if (SDL_PollEvent(&event) && event.type == SDL_QUIT)
     exit(EXIT_SUCCESS);
@@ -70,7 +70,7 @@ void update_screen() {
   SDL_RenderClear(renderer);
 }
 
-int Rand() { return rand(); }
+int Rand(void) { return rand(); }
 
 int atan2_int(int x, int y) {
   static const double pi = 3.1415926535;
