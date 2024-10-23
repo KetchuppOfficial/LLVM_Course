@@ -1,9 +1,5 @@
 #include <array>
 #include <cassert>
-#include <llvm-18/llvm/IR/InstrTypes.h>
-#include <llvm-18/llvm/IR/Instruction.h>
-#include <llvm-18/llvm/IR/Instructions.h>
-#include <llvm-18/llvm/Support/Alignment.h>
 #include <memory>
 #include <string_view>
 #include <unordered_map>
@@ -306,11 +302,7 @@ static std::size_t BBIds[] = {
     185, 189, 197, 200, 206, 214, 221, 233, 235, 242, 250, 254, 264,
     271, 273, 278, 281, 303, 306, 308, 311, 313, 323, 325, 327, 337,
     339, 341, 351, 355, 357, 367, 369, 374, 410, 413, 418, 422, 423,
-    431, 432, 439, 441, 442, 464, 471, 474, 476, 497, 503, 507, 519};
-
-//     327, 337,
-//     339, 341, 351, 355, 357, 367, 369, 374, 410, 413, 418, 422, 423,
-//     431, 432, 439, 441, 442, 464, 471, 474, 476, 497, 503, 507, 519
+    431, 432, 439, 441, 452, 464, 471, 474, 476, 497, 503, 507, 519};
 
 } // unnamed namespace
 
@@ -625,10 +617,11 @@ int main() {
       PerpsArrTy, M->getNamedValue("compute_normals.perps"),
       {ConstantInt64(Ctx, 0), Value18, Value78});
   // tail call void @llvm.memcpy.p0.p0.i64(ptr noundef nonnull align 4 dereferenceable(12) %21, ptr noundef nonnull align 4 dereferenceable(12) %22, i64 12, i1 false), !tbaa.struct !13
-  auto *BB20TailCall = Builder.CreateCall(
-      Memcpy->getFunctionType(), Memcpy,
-      {Value21, Value22, ConstantInt64(Ctx, 12), ConstantInt::getFalse(Ctx)});
-  BB20TailCall->setTailCall(true);
+  Builder
+      .CreateCall(Memcpy->getFunctionType(), Memcpy,
+                  {Value21, Value22, ConstantInt64(Ctx, 12),
+                   ConstantInt::getFalse(Ctx)})
+      ->setTailCall(true);
   // br label %23
   Builder.CreateBr(BB.at(23));
   // ==========================================================================
@@ -722,10 +715,11 @@ int main() {
       PerpsArrTy, M->getNamedValue("compute_normals.perps"),
       {ConstantInt64(Ctx, 0), Value106, Value78});
   // tail call void @llvm.memcpy.p0.p0.i64(ptr noundef nonnull align 4 dereferenceable(12) %108, ptr noundef nonnull align 4 dereferenceable(12) %109, i64 12, i1 false), !tbaa.struct !13
-  auto *BB105TailCall = Builder.CreateCall(
-      Memcpy->getFunctionType(), Memcpy,
-      {Value108, Value109, ConstantInt64(Ctx, 12), ConstantInt::getFalse(Ctx)});
-  BB105TailCall->setTailCall(true);
+  Builder
+      .CreateCall(Memcpy->getFunctionType(), Memcpy,
+                  {Value108, Value109, ConstantInt64(Ctx, 12),
+                   ConstantInt::getFalse(Ctx)})
+      ->setTailCall(true);
   // %110 = or disjoint i64 %106, 1
   auto *Value110 =
       BinaryOperator::CreateDisjointOr(Value106, ConstantInt64(Ctx, 1));
@@ -739,10 +733,11 @@ int main() {
       PerpsArrTy, M->getNamedValue("compute_normals.perps"),
       {ConstantInt64(Ctx, 0), Value110, Value78});
   // tail call void @llvm.memcpy.p0.p0.i64(ptr noundef nonnull align 4 dereferenceable(12) %111, ptr noundef nonnull align 4 dereferenceable(12) %112, i64 12, i1 false), !tbaa.struct !13
-  auto *BB105TailCall2 = Builder.CreateCall(
-      Memcpy->getFunctionType(), Memcpy,
-      {Value111, Value112, ConstantInt64(Ctx, 12), ConstantInt::getFalse(Ctx)});
-  BB105TailCall2->setTailCall(true);
+  Builder
+      .CreateCall(Memcpy->getFunctionType(), Memcpy,
+                  {Value111, Value112, ConstantInt64(Ctx, 12),
+                   ConstantInt::getFalse(Ctx)})
+      ->setTailCall(true);
   // %113 = add nuw nsw i64 %106, 2
   auto *Value113 = Builder.CreateNUWAdd(Value106, ConstantInt64(Ctx, 2));
   // %114 = add i64 %107, 2
@@ -1441,15 +1436,18 @@ int main() {
   // %317 = icmp sgt i32 %315, 0
   auto *Value317 = Builder.CreateICmpSGT(Value315, ConstantInt32(Ctx, 0));
   // %318 = select i1 %316, i1 %317, i1 false
-  auto *Value318 = Builder.CreateSelect(Value316, Value317, ConstantInt::getFalse(Ctx));
+  auto *Value318 =
+      Builder.CreateSelect(Value316, Value317, ConstantInt::getFalse(Ctx));
   // %319 = icmp slt i32 %314, 0
   auto *Value319 = Builder.CreateICmpSLT(Value314, ConstantInt32(Ctx, 0));
   // %320 = icmp slt i32 %315, 0
   auto *Value320 = Builder.CreateICmpSLT(Value315, ConstantInt32(Ctx, 0));
   // %321 = select i1 %319, i1 %320, i1 false
-  auto *Value321 = Builder.CreateSelect(Value319, Value320, ConstantInt::getFalse(Ctx));
+  auto *Value321 =
+      Builder.CreateSelect(Value319, Value320, ConstantInt::getFalse(Ctx));
   // %322 = select i1 %318, i1 true, i1 %321
-  auto *Value322 = Builder.CreateSelect(Value318, ConstantInt::getTrue(Ctx), Value321);
+  auto *Value322 =
+      Builder.CreateSelect(Value318, ConstantInt::getTrue(Ctx), Value321);
   // br i1 %322, label %323, label %418
   Builder.CreateCondBr(Value322, BB.at(323), BB.at(418));
   // ==========================================================================
@@ -1476,22 +1474,642 @@ int main() {
   Builder.SetInsertPoint(BB.at(327));
 
   // %328 = load i32, ptr %124, align 8, !tbaa !5
+  auto *Value328 = Builder.CreateAlignedLoad(Int32Ty, Value124, MaybeAlign{8});
   // %329 = load i32, ptr %255, align 4, !tbaa !5
+  auto *Value329 = Builder.CreateAlignedLoad(Int32Ty, Value255, MaybeAlign{4});
   // %330 = icmp sgt i32 %328, 0
+  auto *Value330 = Builder.CreateICmpSGT(Value328, ConstantInt32(Ctx, 0));
   // %331 = icmp sgt i32 %329, 0
+  auto *Value331 = Builder.CreateICmpSGT(Value329, ConstantInt32(Ctx, 0));
   // %332 = select i1 %330, i1 %331, i1 false
+  auto *Value332 =
+      Builder.CreateSelect(Value330, Value331, ConstantInt::getFalse(Ctx));
   // %333 = icmp slt i32 %328, 0
+  auto *Value333 = Builder.CreateICmpSLT(Value328, ConstantInt32(Ctx, 0));
   // %334 = icmp slt i32 %329, 0
+  auto *Value334 = Builder.CreateICmpSLT(Value329, ConstantInt32(Ctx, 0));
   // %335 = select i1 %333, i1 %334, i1 false
+  auto *Value335 =
+      Builder.CreateSelect(Value333, Value334, ConstantInt::getFalse(Ctx));
   // %336 = select i1 %332, i1 true, i1 %335
+  auto *Value336 =
+      Builder.CreateSelect(Value332, ConstantInt::getTrue(Ctx), Value335);
   // br i1 %336, label %337, label %418
+  Builder.CreateCondBr(Value336, BB.at(337), BB.at(418));
   // ==========================================================================
 
   // ================================= BB 337 =================================
   Builder.SetInsertPoint(BB.at(337));
 
   // %338 = icmp eq i32 %258, -2
+  auto *Value338 = Builder.CreateICmpEQ(Value258, ConstantInt32(Ctx, -2));
   // br i1 %338, label %355, label %339
+  Builder.CreateCondBr(Value338, BB.at(355), BB.at(339));
+  // ==========================================================================
+
+  // ================================= BB 339 =================================
+  Builder.SetInsertPoint(BB.at(339));
+
+  // %340 = icmp eq i32 %263, -2
+  auto *Value340 = Builder.CreateICmpEQ(Value263, ConstantInt32(Ctx, -2));
+  // br i1 %340, label %351, label %341
+  Builder.CreateCondBr(Value340, BB.at(351), BB.at(341));
+  // ==========================================================================
+
+  // ================================= BB 341 =================================
+  Builder.SetInsertPoint(BB.at(341));
+
+  // %342 = load i32, ptr %124, align 8, !tbaa !5
+  auto *Value342 = Builder.CreateAlignedLoad(Int32Ty, Value144, MaybeAlign{8});
+  // %343 = load i32, ptr %255, align 4, !tbaa !5
+  auto *Value343 = Builder.CreateAlignedLoad(Int32Ty, Value255, MaybeAlign{4});
+  // %344 = icmp sgt i32 %342, 720
+  auto *Value344 = Builder.CreateICmpSGT(Value342, ConstantInt32(Ctx, 720));
+  // %345 = icmp sgt i32 %343, 720
+  auto *Value345 = Builder.CreateICmpSGT(Value343, ConstantInt32(Ctx, 720));
+  // %346 = select i1 %344, i1 %345, i1 false
+  auto *Value346 =
+      Builder.CreateSelect(Value344, Value345, ConstantInt::getFalse(Ctx));
+  // %347 = icmp slt i32 %342, 720
+  auto *Value347 = Builder.CreateICmpSLT(Value342, ConstantInt32(Ctx, 720));
+  // %348 = icmp slt i32 %343, 720
+  auto *Value348 = Builder.CreateICmpSLT(Value343, ConstantInt32(Ctx, 720));
+  // %349 = select i1 %347, i1 %348, i1 false
+  auto *Value349 =
+      Builder.CreateSelect(Value347, Value348, ConstantInt::getFalse(Ctx));
+  // %350 = select i1 %346, i1 true, i1 %349
+  auto *Value350 =
+      Builder.CreateSelect(Value346, ConstantInt::getTrue(Ctx), Value335);
+  // br i1 %350, label %351, label %418
+  Builder.CreateCondBr(Value350, BB.at(351), BB.at(418));
+  // ==========================================================================
+
+  // ================================= BB 351 =================================
+  Builder.SetInsertPoint(BB.at(351));
+
+  // %352 = icmp eq i32 %258, -1
+  auto *Value352 = Builder.CreateICmpEQ(Value258, ConstantInt32(Ctx, -1));
+  // %353 = icmp eq i32 %263, -1
+  auto *Value353 = Builder.CreateICmpEQ(Value263, ConstantInt32(Ctx, -1));
+  // %354 = select i1 %352, i1 true, i1 %353
+  auto *Value354 =
+      Builder.CreateSelect(Value352, ConstantInt::getTrue(Ctx), Value353);
+  // br i1 %354, label %367, label %357
+  Builder.CreateCondBr(Value354, BB.at(367), BB.at(357));
+  // ==========================================================================
+
+  // ================================= BB 355 =================================
+  Builder.SetInsertPoint(BB.at(355));
+
+  // %356 = icmp eq i32 %263, -1
+  auto *Value356 = Builder.CreateICmpEQ(Value263, ConstantInt32(Ctx, -1));
+  // br i1 %356, label %367, label %357
+  Builder.CreateCondBr(Value356, BB.at(367), BB.at(357));
+  // ==========================================================================
+
+  // ================================= BB 357 =================================
+  Builder.SetInsertPoint(BB.at(357));
+
+  // %358 = load i32, ptr %125, align 4, !tbaa !10
+  auto *Value358 = Builder.CreateAlignedLoad(Int32Ty, Value125, MaybeAlign{4});
+  // %359 = load i32, ptr %260, align 4, !tbaa !10
+  auto *Value359 = Builder.CreateAlignedLoad(Int32Ty, Value260, MaybeAlign{4});
+  // %360 = icmp sgt i32 %358, 720
+  auto *Value360 = Builder.CreateICmpSGT(Value358, ConstantInt32(Ctx, 720));
+  // %361 = icmp sgt i32 %359, 720
+  auto *Value361 = Builder.CreateICmpSGT(Value359, ConstantInt32(Ctx, 720));
+  // %362 = select i1 %360, i1 %361, i1 false
+  auto *Value362 =
+      Builder.CreateSelect(Value360, Value361, ConstantInt::getFalse(Ctx));
+  // %363 = icmp slt i32 %358, 720
+  auto *Value363 = Builder.CreateICmpSLT(Value358, ConstantInt32(Ctx, 720));
+  // %364 = icmp slt i32 %359, 720
+  auto *Value364 = Builder.CreateICmpSLT(Value359, ConstantInt32(Ctx, 720));
+  // %365 = select i1 %363, i1 %364, i1 false
+  auto *Value365 =
+      Builder.CreateSelect(Value363, Value364, ConstantInt::getFalse(Ctx));
+  // %366 = select i1 %362, i1 true, i1 %365
+  auto *Value366 =
+      Builder.CreateSelect(Value362, ConstantInt::getTrue(Ctx), Value365);
+  // br i1 %366, label %367, label %418
+  Builder.CreateCondBr(Value366, BB.at(367), BB.at(418));
+  // ==========================================================================
+
+  // ================================= BB 367 =================================
+  Builder.SetInsertPoint(BB.at(367));
+
+  // %368 = zext i32 %263 to i64
+  auto *Value368 = Builder.CreateZExt(Value263, Int64Ty);
+  // br label %369
+  Builder.CreateBr(BB.at(369));
+  // ==========================================================================
+
+  // ================================= BB 369 =================================
+  Builder.SetInsertPoint(BB.at(369));
+
+  // %370 = phi i64 [ 0, %367 ], [ %411, %410 ]
+  auto *Value370 = Builder.CreatePHI(Int64Ty, 2);
+  // %371 = icmp eq i64 %370, %261
+  auto *Value371 = Builder.CreateICmpEQ(Value370, Value261);
+  // // %372 = icmp eq i64 %370, %368
+  auto *Value372 = Builder.CreateICmpEQ(Value370, Value368);
+  // // %373 = select i1 %371, i1 true, i1 %372
+  auto *Value373 =
+      Builder.CreateSelect(Value371, ConstantInt::getTrue(Ctx), Value372);
+  // br i1 %373, label %410, label %374
+  Builder.CreateCondBr(Value373, BB.at(410), BB.at(374));
+  // ==========================================================================
+
+  // ================================= BB 374 =================================
+  Builder.SetInsertPoint(BB.at(374));
+
+  // %375 = add nuw nsw i64 %370, %118
+  auto *Value375 = Builder.CreateAdd(Value370, Value118, "", true, true);
+  // %376 = getelementptr inbounds %struct.line_s, ptr @compute_normals.perps, i64 %375
+  auto *Value376 = Builder.CreateInBoundsGEP(
+      Types.at("struct.line_s"), M->getNamedValue("compute_normals.perps"),
+      {Value375});
+  // %377 = load i32, ptr %124, align 8, !tbaa !5
+  auto *Value377 = Builder.CreateAlignedLoad(Int32Ty, Value124, MaybeAlign{8});
+  // %378 = load i32, ptr %125, align 4, !tbaa !10
+  auto *Value378 = Builder.CreateAlignedLoad(Int32Ty, Value125, MaybeAlign{4});
+  // %379 = load i32, ptr %255, align 4, !tbaa !5
+  auto *Value379 = Builder.CreateAlignedLoad(Int32Ty, Value255, MaybeAlign{4});
+  // %380 = load i32, ptr %260, align 4, !tbaa !10
+  auto *Value380 = Builder.CreateAlignedLoad(Int32Ty, Value260, MaybeAlign{4});
+  // %381 = load i32, ptr %376, align 4, !tbaa !19
+  auto *Value381 = Builder.CreateAlignedLoad(Int32Ty, Value376, MaybeAlign{4});
+  // %382 = mul nsw i32 %381, %381
+  auto *Value382 = Builder.CreateNSWMul(Value381, Value381);
+  // %383 = getelementptr inbounds %struct.line_s, ptr @compute_normals.perps, i64 %375, i32 1
+  auto *Value383 = Builder.CreateInBoundsGEP(
+      Types.at("struct.line_s"), M->getNamedValue("compute_normals.perps"),
+      {Value375, ConstantInt32(Ctx, 1)});
+  // %384 = load i32, ptr %383, align 4, !tbaa !21
+  auto *Value384 = Builder.CreateAlignedLoad(Int32Ty, Value383, MaybeAlign{4});
+  // %385 = mul nsw i32 %384, %384
+  auto *Value385 = Builder.CreateNSWMul(Value384, Value384);
+  // %386 = add nuw nsw i32 %385, %382
+  auto *Value386 = Builder.CreateAdd(Value385, Value382, "", true, true);
+  // %387 = getelementptr inbounds %struct.line_s, ptr @compute_normals.perps, i64 %375, i32 2
+  auto *Value387 = Builder.CreateInBoundsGEP(
+      Types.at("struct.line_s"), M->getNamedValue("compute_normals.perps"),
+      {Value375, ConstantInt32(Ctx, 2)});
+  // %388 = load i32, ptr %387, align 4, !tbaa !22
+  auto *Value388 = Builder.CreateAlignedLoad(Int32Ty, Value387, MaybeAlign{4});
+  // %389 = mul nsw i32 %388, %381
+  auto *Value389 = Builder.CreateNSWMul(Value388, Value381);
+  // %390 = sdiv i32 %389, %386
+  auto *Value390 = Builder.CreateSDiv(Value389, Value386);
+  // %391 = mul nsw i32 %388, %384
+  auto *Value391 = Builder.CreateNSWMul(Value388, Value384);
+  // %392 = sdiv i32 %391, %386
+  auto *Value392 = Builder.CreateSDiv(Value391, Value386);
+  // %393 = add nsw i32 %390, %377
+  auto *Value393 = Builder.CreateNSWAdd(Value390, Value377);
+  // %394 = mul nsw i32 %393, %381
+  auto *Value394 = Builder.CreateNSWMul(Value393, Value381);
+  // %395 = add nsw i32 %392, %378
+  auto *Value395 = Builder.CreateNSWAdd(Value393, Value378);
+  // %396 = mul nsw i32 %395, %384
+  auto *Value396 = Builder.CreateNSWMul(Value395, Value384);
+  // %397 = add nsw i32 %396, %394
+  auto *Value397 = Builder.CreateNSWAdd(Value396, Value394);
+  // %398 = add nsw i32 %390, %379
+  auto *Value398 = Builder.CreateNSWAdd(Value390, Value379);
+  // %399 = mul nsw i32 %398, %381
+  auto *Value399 = Builder.CreateNSWMul(Value398, Value381);
+  // %400 = add nsw i32 %392, %380
+  auto *Value400 = Builder.CreateNSWAdd(Value392, Value380);
+  // %401 = mul nsw i32 %400, %384
+  auto *Value401 = Builder.CreateNSWMul(Value400, Value384);
+  // %402 = add nsw i32 %401, %399
+  auto *Value402 = Builder.CreateNSWAdd(Value401, Value399);
+  // %403 = icmp sgt i32 %397, 0
+  auto *Value403 = Builder.CreateICmpSGT(Value397, ConstantInt32(Ctx, 0));
+  // %404 = icmp sgt i32 %402, 0
+  auto *Value404 = Builder.CreateICmpSGT(Value402, ConstantInt32(Ctx, 0));
+  // %405 = select i1 %403, i1 %404, i1 false
+  auto *Value405 =
+      Builder.CreateSelect(Value403, Value404, ConstantInt::getFalse(Ctx));
+  // %406 = icmp slt i32 %397, 0
+  auto *Value406 = Builder.CreateICmpSLT(Value397, ConstantInt32(Ctx, 0));
+  // %407 = icmp slt i32 %402, 0
+  auto *Value407 = Builder.CreateICmpSLT(Value402, ConstantInt32(Ctx, 0));
+  // %408 = select i1 %406, i1 %407, i1 false
+  auto *Value408 =
+      Builder.CreateSelect(Value406, Value407, ConstantInt::getFalse(Ctx));
+  // %409 = select i1 %405, i1 true, i1 %408
+  auto *Value409 =
+      Builder.CreateSelect(Value405, ConstantInt::getTrue(Ctx), Value408);
+  // br i1 %409, label %410, label %418
+  Builder.CreateCondBr(Value409, BB.at(410), BB.at(418));
+  // ==========================================================================
+
+  // ================================= BB 410 =================================
+  Builder.SetInsertPoint(BB.at(410));
+
+  // %411 = add nuw nsw i64 %370, 1
+  auto *Value411 =
+      Builder.CreateAdd(Value370, ConstantInt64(Ctx, 1), "", true, true);
+  // %412 = icmp eq i64 %411, 99
+  auto *Value412 = Builder.CreateICmpEQ(Value411, ConstantInt64(Ctx, 99));
+  // br i1 %412, label %413, label %369, !llvm.loop !35
+  Builder.CreateCondBr(Value412, BB.at(413), BB.at(369));
+  // ==========================================================================
+
+  // ================================= BB 413 =================================
+  Builder.SetInsertPoint(BB.at(413));
+
+  // %414 = add nsw i32 %256, 1
+  auto *Value414 = Builder.CreateNSWAdd(Value256, ConstantInt32(Ctx, 1));
+  // %415 = sext i32 %256 to i64
+  auto *Value415 = Builder.CreateSExt(Value256, Int64Ty);
+  // %416 = getelementptr inbounds [104 x %struct.point_s], ptr %126, i64 0, i64 %415
+  auto *Value416 =
+      Builder.CreateInBoundsGEP(ArrayType::get(Types.at("struct.point_s"), 104),
+                                Value126, {ConstantInt64(Ctx, 0), Value415});
+  // %417 = load i64, ptr %255, align 4
+  auto *Value417 = Builder.CreateAlignedLoad(Int64Ty, Value255, MaybeAlign{4});
+  // store i64 %417, ptr %416, align 4
+  Builder.CreateAlignedStore(Value417, Value416, MaybeAlign{4});
+  // br label %418
+  Builder.CreateBr(BB.at(418));
+  // ==========================================================================
+
+  // ================================= BB 418 =================================
+  Builder.SetInsertPoint(BB.at(418));
+
+  // %419 = phi i32 [ %414, %413 ], [ %256, %357 ], [ %256, %341 ], [ %256, %327 ], [ %256, %313 ], [ %256, %374 ]
+  auto *Value419 = Builder.CreatePHI(Int32Ty, 6);
+  // %420 = getelementptr inbounds %struct.tagged_point_s, ptr %255, i64 1
+  auto *Value420 = Builder.CreateInBoundsGEP(Types.at("struct.tagged_point_s"),
+                                             Value255, {ConstantInt64(Ctx, 1)});
+  // %421 = icmp eq ptr %420, %121
+  auto *Value421 = Builder.CreateICmpEQ(Value420, Value121);
+  // br i1 %421, label %264, label %254, !llvm.loop !36
+  Builder.CreateCondBr(Value421, BB.at(264), BB.at(254));
+  // ==========================================================================
+
+  // ================================= BB 422 =================================
+  Builder.SetInsertPoint(BB.at(422));
+
+  // tail call void @set_color(i32 noundef 0, i32 noundef 0, i32 noundef 0) #4
+  Builder
+      .CreateCall(
+          SetColor->getFunctionType(), SetColor,
+          {ConstantInt32(Ctx, 0), ConstantInt32(Ctx, 0), ConstantInt32(Ctx, 0)})
+      ->setTailCall(true);
+  // br label %423
+  Builder.CreateBr(BB.at(423));
+  // ==========================================================================
+
+  // ================================= BB 423 =================================
+  Builder.SetInsertPoint(BB.at(423));
+
+  // %424 = phi i64 [ 0, %422 ], [ %429, %423 ]
+  auto *Value424 = Builder.CreatePHI(Int64Ty, 2);
+  // %425 = getelementptr inbounds %struct.point_s, ptr @generate_points.points, i64 %424
+  auto *Value425 = Builder.CreateInBoundsGEP(
+      Types.at("struct.point_s"), M->getNamedValue("generate_points.points"),
+      {Value424});
+  // %426 = load i32, ptr %425, align 8, !tbaa !5
+  auto *Value426 = Builder.CreateAlignedLoad(Int32Ty, Value425, MaybeAlign{8});
+  // %427 = getelementptr inbounds %struct.point_s, ptr @generate_points.points, i64 %424, i32 1
+  auto *Value427 = Builder.CreateInBoundsGEP(
+      Types.at("struct.point_s"), M->getNamedValue("generate_points.points"),
+      {Value424, ConstantInt32(Ctx, 1)});
+  // %428 = load i32, ptr %427, align 4, !tbaa !10
+  auto *Value428 = Builder.CreateAlignedLoad(Int32Ty, Value427, MaybeAlign{4});
+  // tail call void @draw_point(i32 noundef %426, i32 noundef %428) #4
+  Builder
+      .CreateCall(DrawPoint->getFunctionType(), DrawPoint, {Value426, Value428})
+      ->setTailCall(true);
+  // %429 = add nuw nsw i64 %424, 1
+  auto *Value429 =
+      Builder.CreateAdd(Value424, ConstantInt64(Ctx, 1), "", true, true);
+  // %430 = icmp eq i64 %429, 100
+  auto *Value430 = Builder.CreateICmpEQ(Value429, ConstantInt64(Ctx, 100));
+  // br i1 %430, label %432, label %423, !llvm.loop !37
+  Builder.CreateCondBr(Value430, BB.at(432), BB.at(423));
+  // ==========================================================================
+
+  // ================================= BB 431 =================================
+  Builder.SetInsertPoint(BB.at(431));
+
+  // tail call void @update_screen() #4
+  Builder.CreateCall(UpdateScreen->getFunctionType(), UpdateScreen);
+  // br label %464
+  Builder.CreateBr(BB.at(464));
+  // ==========================================================================
+
+  // ================================= BB 432 =================================
+  Builder.SetInsertPoint(BB.at(432));
+
+  // %433 = phi i64 [ %450, %441 ], [ 0, %423 ]
+  auto *Value433 = Builder.CreatePHI(Int64Ty, 2);
+  // %434 = getelementptr inbounds %struct.polygon_s, ptr @get_cells.cells, i64 %433
+  auto *Value434 = Builder.CreateInBoundsGEP(
+      Types.at("struct.polygon_s"), M->getNamedValue("get_cells.cells"),
+      {Value433});
+  // %435 = getelementptr inbounds %struct.polygon_s, ptr @get_cells.cells, i64 %433, i32 1
+  auto *Value435 = Builder.CreateInBoundsGEP(
+      Types.at("struct.polygon_s"), M->getNamedValue("get_cells.cells"),
+      {Value433, ConstantInt32(Ctx, 1)});
+  // %436 = load i32, ptr %435, align 4, !tbaa !30
+  auto *Value436 = Builder.CreateAlignedLoad(Int32Ty, Value435, MaybeAlign{4});
+  // %437 = add nsw i32 %436, -1
+  auto *Value437 = Builder.CreateNSWAdd(Value436, ConstantInt32(Ctx, -1));
+  // %438 = icmp eq i32 %437, 0
+  auto *Value438 = Builder.CreateICmpEQ(Value437, ConstantInt32(Ctx, 0));
+  // br i1 %438, label %441, label %439
+  Builder.CreateCondBr(Value438, BB.at(441), BB.at(439));
+  // ==========================================================================
+
+  // ================================= BB 439 =================================
+  Builder.SetInsertPoint(BB.at(439));
+
+  // %440 = zext i32 %437 to i64
+  auto *Value440 = Builder.CreateZExt(Value437, Int64Ty);
+  // br label %452
+  Builder.CreateBr(BB.at(452));
+  // ==========================================================================
+
+  // ================================= BB 441 =================================
+  Builder.SetInsertPoint(BB.at(441));
+
+  // %442 = sext i32 %437 to i64
+  auto *Value442 = Builder.CreateSExt(Value437, Int64Ty);
+  // %443 = getelementptr inbounds %struct.point_s, ptr %434, i64 %442
+  auto *Value443 = Builder.CreateInBoundsGEP(Types.at("struct.point_s"),
+                                             Value434, {Value442});
+  // %444 = load i32, ptr %443, align 4, !tbaa !5
+  auto *Value444 = Builder.CreateAlignedLoad(Int32Ty, Value443, MaybeAlign{4});
+  // %445 = getelementptr inbounds %struct.point_s, ptr %434, i64 %442, i32 1
+  auto *Value445 = Builder.CreateInBoundsGEP(
+      Types.at("struct.point_s"), Value434, {Value442, ConstantInt32(Ctx, 1)});
+  // %446 = load i32, ptr %445, align 4, !tbaa !10
+  auto *Value446 = Builder.CreateAlignedLoad(Int32Ty, Value445, MaybeAlign{4});
+  // %447 = load i32, ptr %434, align 4, !tbaa !5
+  auto *Value447 = Builder.CreateAlignedLoad(Int32Ty, Value434, MaybeAlign{4});
+  // %448 = getelementptr inbounds %struct.point_s, ptr %434, i64 0, i32 1
+  auto *Value448 =
+      Builder.CreateInBoundsGEP(Types.at("struct.point_s"), Value434,
+                                {ConstantInt64(Ctx, 0), ConstantInt32(Ctx, 1)});
+  // %449 = load i32, ptr %448, align 4, !tbaa !10
+  auto *Value449 = Builder.CreateAlignedLoad(Int32Ty, Value448, MaybeAlign{4});
+  // tail call void @draw_line(i32 noundef %444, i32 noundef %446, i32 noundef %447, i32 noundef %449) #4
+  Builder
+      .CreateCall(DrawLine->getFunctionType(), DrawLine,
+                  {Value444, Value446, Value447, Value449})
+      ->setTailCall(true);
+  // %450 = add nuw nsw i64 %433, 1
+  auto *Value450 =
+      Builder.CreateAdd(Value433, ConstantInt64(Ctx, 1), "", true, true);
+  // %451 = icmp eq i64 %450, 100
+  auto *Value451 = Builder.CreateICmpEQ(Value450, ConstantInt64(Ctx, 100));
+  // br i1 %451, label %431, label %432, !llvm.loop !38
+  Builder.CreateCondBr(Value451, BB.at(431), BB.at(432));
+  // ==========================================================================
+
+  // ================================= BB 452 =================================
+  Builder.SetInsertPoint(BB.at(452));
+
+  // %453 = phi i64 [ 0, %439 ], [ %458, %452 ]
+  auto *Value453 = Builder.CreatePHI(Int64Ty, 2);
+  // %454 = getelementptr inbounds %struct.point_s, ptr %434, i64 %453
+  auto *Value454 = Builder.CreateInBoundsGEP(Types.at("struct.point_s"),
+                                             Value434, {Value453});
+  // %455 = load i32, ptr %454, align 4, !tbaa !5
+  auto *Value455 = Builder.CreateAlignedLoad(Int32Ty, Value454, MaybeAlign{4});
+  // %456 = getelementptr inbounds %struct.point_s, ptr %434, i64 %453, i32 1
+  auto *Value456 = Builder.CreateInBoundsGEP(
+      Types.at("struct.point_s"), Value434, {Value453, ConstantInt32(Ctx, 1)});
+  // %457 = load i32, ptr %456, align 4, !tbaa !10
+  auto *Value457 = Builder.CreateAlignedLoad(Int32Ty, Value456, MaybeAlign{4});
+  // %458 = add nuw nsw i64 %453, 1
+  auto *Value458 =
+      Builder.CreateAdd(Value453, ConstantInt64(Ctx, 1), "", true, true);
+  // %459 = getelementptr inbounds %struct.point_s, ptr %434, i64 %458
+  auto *Value459 = Builder.CreateInBoundsGEP(Types.at("struct.point_s"),
+                                             Value434, {Value458});
+  // %460 = load i32, ptr %459, align 4, !tbaa !5
+  auto *Value460 = Builder.CreateAlignedLoad(Int32Ty, Value459, MaybeAlign{4});
+  // %461 = getelementptr inbounds %struct.point_s, ptr %434, i64 %458, i32 1
+  auto *Value461 = Builder.CreateInBoundsGEP(
+      Types.at("struct.point_s"), Value434, {Value458, ConstantInt32(Ctx, 1)});
+  // %462 = load i32, ptr %461, align 4, !tbaa !10
+  auto *Value462 = Builder.CreateAlignedLoad(Int32Ty, Value461, MaybeAlign{4});
+  // tail call void @draw_line(i32 noundef %455, i32 noundef %457, i32 noundef %460, i32 noundef %462) #4
+  Builder
+      .CreateCall(DrawLine->getFunctionType(), DrawLine,
+                  {Value455, Value457, Value460, Value462})
+      ->setTailCall(true);
+  // %463 = icmp eq i64 %458, %440
+  auto *Value463 = Builder.CreateICmpEQ(Value458, Value440);
+  // br i1 %463, label %441, label %452, !llvm.loop !39
+  Builder.CreateCondBr(Value463, BB.at(441), BB.at(452));
+  // ==========================================================================
+
+  // ================================= BB 464 =================================
+  Builder.SetInsertPoint(BB.at(464));
+
+  // %465 = phi i64 [ 0, %431 ], [ %528, %519 ]
+  auto *Value465 = Builder.CreatePHI(Int64Ty, 2);
+  // %466 = getelementptr inbounds %struct.point_s, ptr @generate_points.points, i64 %465
+  auto *Value466 = Builder.CreateInBoundsGEP(
+      Types.at("struct.point_s"), M->getNamedValue("generate_points.points"),
+      {Value465});
+  // %467 = getelementptr inbounds %struct.polygon_s, ptr @get_cells.cells, i64 %465
+  auto *Value467 = Builder.CreateInBoundsGEP(
+      Types.at("struct.polygon_s"), M->getNamedValue("get_cells.cells"),
+      {Value465});
+  // %468 = getelementptr inbounds %struct.polygon_s, ptr @get_cells.cells, i64 %465, i32 1
+  auto *Value468 = Builder.CreateInBoundsGEP(
+      Types.at("struct.polygon_s"), M->getNamedValue("get_cells.cells"),
+      {Value465, ConstantInt32(Ctx, 1)});
+  // %469 = load i32, ptr %468, align 4, !tbaa !30
+  auto *Value469 = Builder.CreateAlignedLoad(Int32Ty, Value468, MaybeAlign{4});
+  // %470 = icmp eq i32 %469, 0
+  auto *Value470 = Builder.CreateICmpEQ(Value469, ConstantInt32(Ctx, 0));
+  // br i1 %470, label %519, label %471
+  Builder.CreateCondBr(Value470, BB.at(519), BB.at(471));
+  // ==========================================================================
+
+  // ================================= BB 471 =================================
+  Builder.SetInsertPoint(BB.at(471));
+
+  // %472 = zext i32 %469 to i64
+  auto *Value472 = Builder.CreateZExt(Value469, Int64Ty);
+  // %473 = icmp ult i32 %469, 8
+  auto *Value473 = Builder.CreateICmpULT(Value469, ConstantInt32(Ctx, 8));
+  // br i1 %473, label %503, label %474
+  Builder.CreateCondBr(Value473, BB.at(503), BB.at(474));
+  // ==========================================================================
+
+  // ================================= BB 474 =================================
+  Builder.SetInsertPoint(BB.at(474));
+
+  // %475 = and i64 %472, 4294967288
+  auto *Value475 = Builder.CreateAnd(Value472, ConstantInt64(Ctx, 4294967288));
+  // br label %476
+  Builder.CreateBr(BB.at(476));
+  // ==========================================================================
+
+  // ================================= BB 476 =================================
+  Builder.SetInsertPoint(BB.at(476));
+
+  // %477 = phi i64 [ 0, %474 ], [ %495, %476 ]
+  auto *Value477 = Builder.CreatePHI(Int64Ty, 2);
+  // %478 = phi <4 x i32> [ zeroinitializer, %474 ], [ %493, %476 ]
+  auto *Value478 = Builder.CreatePHI(Int32Vec4, 2);
+  // %479 = phi <4 x i32> [ zeroinitializer, %474 ], [ %494, %476 ]
+  auto *Value479 = Builder.CreatePHI(Int32Vec4, 2);
+  // %480 = phi <4 x i32> [ zeroinitializer, %474 ], [ %491, %476 ]
+  auto *Value480 = Builder.CreatePHI(Int32Vec4, 2);
+  // %481 = phi <4 x i32> [ zeroinitializer, %474 ], [ %492, %476 ]
+  auto *Value481 = Builder.CreatePHI(Int32Vec4, 2);
+  // %482 = or disjoint i64 %477, 4
+  auto *Value482 =
+      BinaryOperator::CreateDisjointOr(Value477, ConstantInt64(Ctx, 4));
+  Builder.Insert(Value482);
+  // %483 = getelementptr inbounds [104 x %struct.point_s], ptr %467, i64 0, i64 %477
+  auto *Value483 =
+      Builder.CreateInBoundsGEP(ArrayType::get(Types.at("struct.point_s"), 104),
+                                Value467, {ConstantInt64(Ctx, 0), Value477});
+  // %484 = getelementptr inbounds [104 x %struct.point_s], ptr %467, i64 0, i64 %482
+  auto *Value484 =
+      Builder.CreateInBoundsGEP(ArrayType::get(Types.at("struct.point_s"), 104),
+                                Value467, {ConstantInt64(Ctx, 0), Value482});
+  // %485 = load <8 x i32>, ptr %483, align 4, !tbaa !14
+  auto *Value485 =
+      Builder.CreateAlignedLoad(Int32Vec8, Value483, MaybeAlign{4});
+  // %486 = load <8 x i32>, ptr %484, align 4, !tbaa !14
+  auto *Value486 =
+      Builder.CreateAlignedLoad(Int32Vec8, Value484, MaybeAlign{4});
+  // %487 = shufflevector <8 x i32> %485, <8 x i32> poison, <4 x i32> <i32 0, i32 2, i32 4, i32 6>
+  auto *Value487 = Builder.CreateShuffleVector(
+      Value485, PoisonValue::get(Int32Vec8), {0, 2, 4, 6});
+  // %488 = shufflevector <8 x i32> %486, <8 x i32> poison, <4 x i32> <i32 0, i32 2, i32 4, i32 6>
+  auto *Value488 = Builder.CreateShuffleVector(
+      Value486, PoisonValue::get(Int32Vec8), {0, 2, 4, 6});
+  // %489 = shufflevector <8 x i32> %485, <8 x i32> poison, <4 x i32> <i32 1, i32 3, i32 5, i32 7>
+  auto *Value489 = Builder.CreateShuffleVector(
+      Value485, PoisonValue::get(Int32Vec8), {1, 3, 5, 7});
+  // %490 = shufflevector <8 x i32> %486, <8 x i32> poison, <4 x i32> <i32 1, i32 3, i32 5, i32 7>
+  auto *Value490 = Builder.CreateShuffleVector(
+      Value486, PoisonValue::get(Int32Vec8), {1, 3, 5, 7});
+  // %491 = add <4 x i32> %487, %480
+  auto *Value491 = Builder.CreateAdd(Value487, Value480);
+  // %492 = add <4 x i32> %488, %481
+  auto *Value492 = Builder.CreateAdd(Value488, Value481);
+  // %493 = add <4 x i32> %489, %478
+  auto *Value493 = Builder.CreateAdd(Value489, Value478);
+  // %494 = add <4 x i32> %490, %479
+  auto *Value494 = Builder.CreateAdd(Value490, Value479);
+  // %495 = add nuw i64 %477, 8
+  auto *Value495 = Builder.CreateNUWAdd(Value477, ConstantInt64(Ctx, 8));
+  // %496 = icmp eq i64 %495, %475
+  auto *Value496 = Builder.CreateICmpEQ(Value495, Value475);
+  // br i1 %496, label %497, label %476, !llvm.loop !40
+  Builder.CreateCondBr(Value496, BB.at(497), BB.at(476));
+  // ==========================================================================
+
+  // ================================= BB 497 =================================
+  Builder.SetInsertPoint(BB.at(497));
+
+  // %498 = add <4 x i32> %494, %493
+  auto *Value498 = Builder.CreateAdd(Value494, Value493);
+  // %499 = tail call i32 @llvm.vector.reduce.add.v4i32(<4 x i32> %498)
+  auto *Value499 = Builder.CreateCall(VectorReduceAdd->getFunctionType(),
+                                      VectorReduceAdd, {Value498});
+  // %500 = add <4 x i32> %492, %491
+  auto *Value500 = Builder.CreateAdd(Value492, Value491);
+  // %501 = tail call i32 @llvm.vector.reduce.add.v4i32(<4 x i32> %500)
+  auto *Value501 = Builder.CreateCall(VectorReduceAdd->getFunctionType(),
+                                      VectorReduceAdd, {Value500});
+  // %502 = icmp eq i64 %475, %472
+  auto *Value502 = Builder.CreateICmpEQ(Value475, Value472);
+  // br i1 %502, label %519, label %503
+  Builder.CreateCondBr(Value502, BB.at(519), BB.at(503));
+  // ==========================================================================
+
+  // ================================= BB 503 =================================
+  Builder.SetInsertPoint(BB.at(503));
+
+  // %504 = phi i64 [ 0, %471 ], [ %475, %497 ]
+  auto *Value504 = Builder.CreatePHI(Int64Ty, 2);
+  // %505 = phi i32 [ 0, %471 ], [ %499, %497 ]
+  auto *Value505 = Builder.CreatePHI(Int32Ty, 2);
+  // %506 = phi i32 [ 0, %471 ], [ %501, %497 ]
+  auto *Value5056 = Builder.CreatePHI(Int32Ty, 2);
+  // br label %507
+  Builder.CreateBr(BB.at(507));
+  // ==========================================================================
+
+  // ================================= BB 507 =================================
+  Builder.SetInsertPoint(BB.at(507));
+
+  // %508 = phi i64 [ %517, %507 ], [ %504, %503 ]
+  auto *Value508 = Builder.CreatePHI(Int64Ty, 2);
+  // %509 = phi i32 [ %516, %507 ], [ %505, %503 ]
+  auto *Value509 = Builder.CreatePHI(Int32Ty, 2);
+  // %510 = phi i32 [ %513, %507 ], [ %506, %503 ]
+  auto *Value510 = Builder.CreatePHI(Int32Ty, 2);
+  // %511 = getelementptr inbounds [104 x %struct.point_s], ptr %467, i64 0, i64 %508
+  auto *Value511 =
+      Builder.CreateInBoundsGEP(ArrayType::get(Types.at("struct.point_s"), 104),
+                                Value467, {ConstantInt64(Ctx, 0), Value508});
+  // %512 = load i32, ptr %511, align 4, !tbaa !5
+  auto *Value512 = Builder.CreateAlignedLoad(Int32Ty, Value511, MaybeAlign{4});
+  // %513 = add nsw i32 %512, %510
+  auto *Value513 = Builder.CreateNSWAdd(Value512, Value510);
+  // %514 = getelementptr inbounds [104 x %struct.point_s], ptr %467, i64 0, i64 %508, i32 1
+  auto *Value514 = Builder.CreateInBoundsGEP(
+      ArrayType::get(Types.at("struct.point_s"), 104), Value467,
+      {ConstantInt64(Ctx, 0), Value508, ConstantInt32(Ctx, 1)});
+  // %515 = load i32, ptr %514, align 4, !tbaa !10
+  auto *Value515 = Builder.CreateAlignedLoad(Int32Ty, Value514, MaybeAlign{4});
+  // %516 = add nsw i32 %515, %509
+  auto *Value516 = Builder.CreateNSWAdd(Value515, Value509);
+  // %517 = add nuw nsw i64 %508, 1
+  auto *Value517 =
+      Builder.CreateAdd(Value508, ConstantInt64(Ctx, 1), "", true, true);
+  // %518 = icmp eq i64 %517, %472
+  auto *Value518 = Builder.CreateICmpEQ(Value517, Value472);
+  // br i1 %518, label %519, label %507, !llvm.loop !41
+  Builder.CreateCondBr(Value518, BB.at(519), BB.at(507));
+  // ==========================================================================
+
+  // ================================= BB 519 =================================
+  Builder.SetInsertPoint(BB.at(519));
+
+  // %520 = phi i32 [ 0, %464 ], [ %501, %497 ], [ %513, %507 ]
+  auto *Value520 = Builder.CreatePHI(Int32Ty, 3);
+  // %521 = phi i32 [ 0, %464 ], [ %499, %497 ], [ %516, %507 ]
+  auto *Value521 = Builder.CreatePHI(Int32Ty, 3);
+  // %522 = sdiv i32 %520, %469
+  auto *Value522 = Builder.CreateSDiv(Value520, Value469);
+  // %523 = sdiv i32 %521, %469
+  auto *Value523 = Builder.CreateSDiv(Value521, Value469);
+  // %524 = zext i32 %523 to i64
+  auto *Value524 = Builder.CreateZExt(Value523, Int64Ty);
+  // %525 = shl nuw i64 %524, 32
+  auto *Value525 = Builder.CreateShl(Value524, uint64_t{32}, "", true);
+  // %526 = zext i32 %522 to i64
+  auto *Value526 = Builder.CreateZExt(Value522, Int64Ty);
+  // %527 = or disjoint i64 %525, %526
+  auto *Value527 = BinaryOperator::CreateDisjointOr(Value525, Value526);
+  Builder.Insert(Value527);
+  // store i64 %527, ptr %466, align 8, !tbaa.struct !42
+  Builder.CreateAlignedStore(Value527, Value466, MaybeAlign{8});
+  // %528 = add nuw nsw i64 %465, 1
+  auto *Value528 =
+      Builder.CreateAdd(Value465, ConstantInt64(Ctx, 1), "", true, true);
+  // %529 = icmp eq i64 %528, 100
+  auto *Value529 = Builder.CreateICmpEQ(Value528, ConstantInt64(Ctx, 100));
+  // br i1 %529, label %25, label %464, !llvm.loop !15
+  Builder.CreateCondBr(Value529, BB.at(25), BB.at(464));
   // ==========================================================================
 
   M->print(outs(), nullptr);
