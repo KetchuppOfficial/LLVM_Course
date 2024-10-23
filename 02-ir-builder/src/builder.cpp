@@ -5,6 +5,8 @@
 #include <unordered_map>
 
 #include "llvm/ADT/ArrayRef.h"
+#include "llvm/ExecutionEngine/ExecutionEngine.h"
+#include "llvm/ExecutionEngine/GenericValue.h"
 #include "llvm/IR/Attributes.h"
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/Constants.h"
@@ -17,7 +19,10 @@
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Verifier.h"
+#include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/raw_ostream.h"
+
+#include "graphics.h"
 
 using namespace llvm;
 
@@ -253,10 +258,11 @@ Function *declareLLVMMemcpy(LLVMContext &Ctx, Module *M) {
 Function *declareRand(LLVMContext &Ctx, Module *M) {
   // declare i32 @Rand() local_unnamed_addr #1
   auto *RandTy = FunctionType::get(Type::getInt32Ty(Ctx), false /* isVarArg */);
-  auto *Rand =
+  auto *RandFn =
       Function::Create(RandTy, GlobalValue::ExternalLinkage, "Rand", M);
-  dyn_cast<GlobalValue>(Rand)->setUnnamedAddr(GlobalValue::UnnamedAddr::Local);
-  return Rand;
+  dyn_cast<GlobalValue>(RandFn)->setUnnamedAddr(
+      GlobalValue::UnnamedAddr::Local);
+  return RandFn;
 }
 
 Function *declareAtan2Int(LLVMContext &Ctx, Module *M) {
@@ -320,7 +326,7 @@ int main() {
   auto *DrawLine = declareDrawLine(Ctx, M.get());
   auto *UpdateScreen = declareUpdateScreen(Ctx, M.get());
   auto *Memcpy = declareLLVMMemcpy(Ctx, M.get());
-  auto *Rand = declareRand(Ctx, M.get());
+  auto *RandFn = declareRand(Ctx, M.get());
   auto *Atan2Int = declareAtan2Int(Ctx, M.get());
   auto *UMin = declareLLVMUMin(Ctx, M.get());
   auto *VectorReduceAdd = declareLLVMVectorReduceAdd(Ctx, M.get());
@@ -353,7 +359,7 @@ int main() {
   // %2 = phi i64 [ 0, %0 ], [ %15, %1 ]
   auto *Value2 = Builder.CreatePHI(Int64Ty, 2);
   // %3 = tail call i32 @Rand() #4
-  auto *Value3 = Builder.CreateCall(Rand->getFunctionType(), Rand);
+  auto *Value3 = Builder.CreateCall(RandFn->getFunctionType(), RandFn);
   Value3->setTailCall(true);
   // %4 = srem i32 %3, 720
   auto *Value4 = Builder.CreateSRem(Value3, ConstantInt32(Ctx, 720));
@@ -373,7 +379,7 @@ int main() {
   // store i32 %7, ptr %8, align 8, !tbaa !5
   Builder.CreateAlignedStore(Value7, Value8, MaybeAlign{8});
   // %9 = tail call i32 @Rand() #4
-  auto *Value9 = Builder.CreateCall(Rand->getFunctionType(), Rand);
+  auto *Value9 = Builder.CreateCall(RandFn->getFunctionType(), RandFn);
   Value3->setTailCall(true);
   // %10 = srem i32 %9, 720
   auto *Value10 = Builder.CreateSRem(Value9, ConstantInt32(Ctx, 720));
@@ -2266,7 +2272,41 @@ int main() {
   if (IsBroken)
     return 1;
 
-  M->print(outs(), nullptr);
+  InitializeNativeTarget();
+  InitializeNativeTargetAsmPrinter();
+
+  ExecutionEngine *EE = EngineBuilder(std::move(M)).create();
+
+  EE->InstallLazyFunctionCreator([](const std::string &FnName) -> void * {
+    if (FnName == "set_color") {
+      return reinterpret_cast<void *>(set_color);
+    }
+    if (FnName == "draw_point") {
+      return reinterpret_cast<void *>(draw_point);
+    }
+    if (FnName == "draw_line") {
+      return reinterpret_cast<void *>(draw_line);
+    }
+    if (FnName == "update_screen") {
+      return reinterpret_cast<void *>(draw_line);
+    }
+    if (FnName == "Rand") {
+      return reinterpret_cast<void *>(Rand);
+    }
+    if (FnName == "atan2_int") {
+      return reinterpret_cast<void *>(atan2_int);
+    }
+    return nullptr;
+  });
+
+  EE->finalizeObject();
+
+  int res = init_screen();
+  if (res)
+    return 1;
+
+  GenericValue v = EE->runFunction(Lloyd, {});
+  outs() << "[EE] Result: " << v.IntVal << '\n';
 
   return 0;
 }
