@@ -3,6 +3,10 @@
 
 enum { kWidth = 720, kHeight = 720, kMargin = 10 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int init_screen(void);
 
 void set_color(int r, int g, int b);
@@ -12,5 +16,9 @@ void update_screen(void);
 
 int Rand(void);
 int atan2_int(int x, int y);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif // INCLUDE_GRAPHICS_H
