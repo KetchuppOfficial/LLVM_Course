@@ -1,5 +1,7 @@
 #include <array>
 #include <cassert>
+#include <llvm-18/llvm/IR/InstrTypes.h>
+#include <llvm-18/llvm/IR/Instruction.h>
 #include <llvm-18/llvm/IR/Instructions.h>
 #include <llvm-18/llvm/Support/Alignment.h>
 #include <memory>
@@ -68,11 +70,11 @@ TypesMap defineStructs(LLVMContext &Ctx) {
   return Types;
 }
 
-ConstantInt *ConstantInt32(LLVMContext &Ctx, int X) {
+ConstantInt *ConstantInt32(LLVMContext &Ctx, int32_t X) {
   return ConstantInt::getSigned(Type::getInt32Ty(Ctx), X);
 }
 
-ConstantInt *ConstantInt64(LLVMContext &Ctx, int X) {
+ConstantInt *ConstantInt64(LLVMContext &Ctx, int64_t X) {
   return ConstantInt::getSigned(Type::getInt64Ty(Ctx), X);
 }
 
@@ -306,9 +308,7 @@ static std::size_t BBIds[] = {
     339, 341, 351, 355, 357, 367, 369, 374, 410, 413, 418, 422, 423,
     431, 432, 439, 441, 442, 464, 471, 474, 476, 497, 503, 507, 519};
 
-//     170,
-//     185, 189, 197, 200, 206, 214, 221, 233, 235, 242, 250, 254, 264,
-//     271, 273, 278, 281, 303, 306, 308, 311, 313, 323, 325, 327, 337,
+//     303, 306, 308, 311, 313, 323, 325, 327, 337,
 //     339, 341, 351, 355, 357, 367, 369, 374, 410, 413, 418, 422, 423,
 //     431, 432, 439, 441, 442, 464, 471, 474, 476, 497, 503, 507, 519
 
@@ -338,6 +338,8 @@ int main() {
   auto *Int32Vec8 = FixedVectorType::get(Int32Ty, 8);
   auto *PerpsArrTy = M->getNamedValue("compute_normals.perps")->getType();
   auto *CellsTy = M->getNamedValue("get_cells.cells")->getType();
+  auto *IntersectionsTy =
+      M->getNamedValue("get_cells.intersections")->getType();
   IRBuilder<> Builder{Ctx};
 
   BBMap BB;
@@ -372,10 +374,9 @@ int main() {
   auto *Value7 = Builder.CreateSelect(Value5, ConstantInt32(Ctx, 10), Value6);
   // %8 = getelementptr inbounds [100 x %struct.point_s], ptr @generate_points.points, i64 0, i64 %2
   auto *Value8 =
-      Builder.CreateGEP(ArrayType::get(Types.at("struct.point_s"), 100),
-                        M->getNamedValue("generate_points.points"),
-                        {ConstantInt64(Ctx, 0), Value2});
-  dyn_cast<GetElementPtrInst>(Value8)->setIsInBounds(true);
+      Builder.CreateInBoundsGEP(ArrayType::get(Types.at("struct.point_s"), 100),
+                                M->getNamedValue("generate_points.points"),
+                                {ConstantInt64(Ctx, 0), Value2});
   // store i32 %7, ptr %8, align 8, !tbaa !5
   Builder.CreateAlignedStore(Value7, Value8, MaybeAlign{8});
   // %9 = tail call i32 @Rand() #4
@@ -393,11 +394,10 @@ int main() {
   auto *Value13 =
       Builder.CreateSelect(Value11, ConstantInt32(Ctx, 10), Value12);
   // %14 = getelementptr inbounds [100 x %struct.point_s], ptr @generate_points.points, i64 0, i64 %2, i32 1
-  auto *Value14 =
-      Builder.CreateGEP(ArrayType::get(Types.at("struct.point_s"), 100),
-                        M->getNamedValue("generate_points.points"),
-                        {ConstantInt64(Ctx, 0), Value2, ConstantInt32(Ctx, 1)});
-  dyn_cast<GetElementPtrInst>(Value14)->setIsInBounds(true);
+  auto *Value14 = Builder.CreateInBoundsGEP(
+      ArrayType::get(Types.at("struct.point_s"), 100),
+      M->getNamedValue("generate_points.points"),
+      {ConstantInt64(Ctx, 0), Value2, ConstantInt32(Ctx, 1)});
   // store i32 %13, ptr %14, align 4, !tbaa !10
   Builder.CreateAlignedStore(Value13, Value14, MaybeAlign{4});
   // %15 = add nuw nsw i64 %2, 1
@@ -449,10 +449,9 @@ int main() {
   Builder.SetInsertPoint(BB.at(34));
 
   // %35 = getelementptr inbounds %struct.point_s, ptr @generate_points.points, i64 %29
-  auto *Value35 =
-      Builder.CreateGEP(Types.at("struct.point_s"),
-                        M->getNamedValue("generate_points.points"), {Value29});
-  dyn_cast<GetElementPtrInst>(Value35)->setIsInBounds(true);
+  auto *Value35 = Builder.CreateInBoundsGEP(
+      Types.at("struct.point_s"), M->getNamedValue("generate_points.points"),
+      {Value29});
   // %36 = load i32, ptr %35, align 8, !tbaa !5
   auto *Value36 = Builder.CreateAlignedLoad(Int32Ty, Value35, MaybeAlign{8});
   // %37 = getelementptr i8, ptr %35, i64 4
@@ -536,10 +535,9 @@ int main() {
   // %64 = add <4 x i32> %62, %63
   auto *Value64 = Builder.CreateAdd(Value62, Value63);
   // %65 = getelementptr inbounds [100 x [99 x %struct.line_s]], ptr @compute_normals.perps, i64 0, i64 %29, i64 %50
-  auto *Value65 =
-      Builder.CreateGEP(PerpsArrTy, M->getNamedValue("compute_normals.perps"),
-                        {ConstantInt64(Ctx, 0), Value29, Value50});
-  dyn_cast<GetElementPtrInst>(Value65)->setIsInBounds(true);
+  auto *Value65 = Builder.CreateInBoundsGEP(
+      PerpsArrTy, M->getNamedValue("compute_normals.perps"),
+      {ConstantInt64(Ctx, 0), Value29, Value50});
   // %66 = shufflevector <4 x i32> %60, <4 x i32> %61, <8 x i32> <i32 0, i32 1, i32 2, i32 3, i32 4, i32 5, i32 6, i32 7>
   auto *Value66 =
       Builder.CreateShuffleVector(Value60, Value61, {0, 1, 2, 3, 4, 5, 6, 7});
@@ -619,15 +617,13 @@ int main() {
   Builder.SetInsertPoint(BB.at(20));
 
   // %21 = getelementptr inbounds [100 x [99 x %struct.line_s]], ptr @compute_normals.perps, i64 0, i64 %29, i64 %18
-  auto *Value21 =
-      Builder.CreateGEP(PerpsArrTy, M->getNamedValue("compute_normals.perps"),
-                        {ConstantInt64(Ctx, 0), Value29, Value18});
-  dyn_cast<GetElementPtrInst>(Value21)->setIsInBounds(true);
+  auto *Value21 = Builder.CreateInBoundsGEP(
+      PerpsArrTy, M->getNamedValue("compute_normals.perps"),
+      {ConstantInt64(Ctx, 0), Value29, Value18});
   // %22 = getelementptr inbounds [100 x [99 x %struct.line_s]], ptr @compute_normals.perps, i64 0, i64 %18, i64 %78
-  auto *Value22 =
-      Builder.CreateGEP(PerpsArrTy, M->getNamedValue("compute_normals.perps"),
-                        {ConstantInt64(Ctx, 0), Value18, Value78});
-  dyn_cast<GetElementPtrInst>(Value22)->setIsInBounds(true);
+  auto *Value22 = Builder.CreateInBoundsGEP(
+      PerpsArrTy, M->getNamedValue("compute_normals.perps"),
+      {ConstantInt64(Ctx, 0), Value18, Value78});
   // tail call void @llvm.memcpy.p0.p0.i64(ptr noundef nonnull align 4 dereferenceable(12) %21, ptr noundef nonnull align 4 dereferenceable(12) %22, i64 12, i1 false), !tbaa.struct !13
   auto *BB20TailCall = Builder.CreateCall(
       Memcpy->getFunctionType(), Memcpy,
@@ -654,15 +650,13 @@ int main() {
   // %85 = add nsw i64 %84, -1
   auto *Value85 = Builder.CreateNSWAdd(Value84, ConstantInt64(Ctx, -1));
   // %86 = getelementptr inbounds [100 x [99 x %struct.line_s]], ptr @compute_normals.perps, i64 0, i64 %29, i64 %85
-  auto *Value86 =
-      Builder.CreateGEP(PerpsArrTy, M->getNamedValue("compute_normals.perps"),
-                        {ConstantInt64(Ctx, 0), Value29, Value85});
-  dyn_cast<GetElementPtrInst>(Value86)->setIsInBounds(true);
+  auto *Value86 = Builder.CreateInBoundsGEP(
+      PerpsArrTy, M->getNamedValue("compute_normals.perps"),
+      {ConstantInt64(Ctx, 0), Value29, Value85});
   // %87 = getelementptr inbounds %struct.point_s, ptr @generate_points.points, i64 %84
-  auto *Value87 =
-      Builder.CreateGEP(Types.at("struct.point_s"),
-                        M->getNamedValue("generate_points.points"), {Value84});
-  dyn_cast<GetElementPtrInst>(Value87)->setIsInBounds(true);
+  auto *Value87 = Builder.CreateInBoundsGEP(
+      Types.at("struct.point_s"), M->getNamedValue("generate_points.points"),
+      {Value84});
   // %88 = load i32, ptr %87, align 8, !tbaa !5
   auto *Value88 = Builder.CreateAlignedLoad(Int32Ty, Value87, MaybeAlign{8});
   // %89 = getelementptr i8, ptr %87, i64 4
@@ -687,10 +681,9 @@ int main() {
   // %97 = sub nsw i32 0, %95
   auto *Value97 = Builder.CreateNSWSub(ConstantInt32(Ctx, 0), Value95);
   // %98 = getelementptr inbounds [100 x [99 x %struct.line_s]], ptr @compute_normals.perps, i64 0, i64 %29, i64 %85, i32 1
-  auto *Value98 = Builder.CreateGEP(
+  auto *Value98 = Builder.CreateInBoundsGEP(
       PerpsArrTy, M->getNamedValue("compute_normals.perps"),
       {ConstantInt64(Ctx, 0), Value29, Value85, ConstantInt32(Ctx, 1)});
-  dyn_cast<GetElementPtrInst>(Value98)->setIsInBounds(true);
   // store i32 %97, ptr %98, align 4, !tbaa !21
   Builder.CreateAlignedStore(Value97, Value98, MaybeAlign{4});
   // %99 = mul nsw i32 %94, %95
@@ -700,10 +693,9 @@ int main() {
   // %101 = add i32 %99, %100
   auto *Value101 = Builder.CreateAdd(Value99, Value100);
   // %102 = getelementptr inbounds [100 x [99 x %struct.line_s]], ptr @compute_normals.perps, i64 0, i64 %29, i64 %85, i32 2
-  auto *Value102 = Builder.CreateGEP(
+  auto *Value102 = Builder.CreateInBoundsGEP(
       PerpsArrTy, M->getNamedValue("compute_normals.perps"),
       {ConstantInt64(Ctx, 0), Value29, Value85, ConstantInt32(Ctx, 2)});
-  dyn_cast<GetElementPtrInst>(Value102)->setIsInBounds(true);
   // store i32 %101, ptr %102, align 4, !tbaa !22
   Builder.CreateAlignedStore(Value101, Value102, MaybeAlign{4});
   // %103 = add nuw nsw i64 %84, 1
@@ -722,32 +714,30 @@ int main() {
   // %107 = phi i64 [ 0, %81 ], [ %114, %105 ]
   auto *Value107 = Builder.CreatePHI(Int64Ty, 2);
   // %108 = getelementptr inbounds [100 x [99 x %struct.line_s]], ptr @compute_normals.perps, i64 0, i64 %29, i64 %106
-  auto *Value108 =
-      Builder.CreateGEP(PerpsArrTy, M->getNamedValue("compute_normals.perps"),
-                        {ConstantInt64(Ctx, 0), Value29, Value106});
-  dyn_cast<GetElementPtrInst>(Value108)->setIsInBounds(true);
+  auto *Value108 = Builder.CreateInBoundsGEP(
+      PerpsArrTy, M->getNamedValue("compute_normals.perps"),
+      {ConstantInt64(Ctx, 0), Value29, Value106});
   // %109 = getelementptr inbounds [100 x [99 x %struct.line_s]], ptr @compute_normals.perps, i64 0, i64 %106, i64 %78
-  auto *Value109 =
-      Builder.CreateGEP(PerpsArrTy, M->getNamedValue("compute_normals.perps"),
-                        {ConstantInt64(Ctx, 0), Value106, Value78});
-  dyn_cast<GetElementPtrInst>(Value109)->setIsInBounds(true);
+  auto *Value109 = Builder.CreateInBoundsGEP(
+      PerpsArrTy, M->getNamedValue("compute_normals.perps"),
+      {ConstantInt64(Ctx, 0), Value106, Value78});
   // tail call void @llvm.memcpy.p0.p0.i64(ptr noundef nonnull align 4 dereferenceable(12) %108, ptr noundef nonnull align 4 dereferenceable(12) %109, i64 12, i1 false), !tbaa.struct !13
   auto *BB105TailCall = Builder.CreateCall(
       Memcpy->getFunctionType(), Memcpy,
       {Value108, Value109, ConstantInt64(Ctx, 12), ConstantInt::getFalse(Ctx)});
   BB105TailCall->setTailCall(true);
   // %110 = or disjoint i64 %106, 1
-  auto *Value110 = Builder.CreateOr(Value106, uint64_t{1});
+  auto *Value110 =
+      BinaryOperator::CreateDisjointOr(Value106, ConstantInt64(Ctx, 1));
+  Builder.Insert(Value110);
   // %111 = getelementptr inbounds [100 x [99 x %struct.line_s]], ptr @compute_normals.perps, i64 0, i64 %29, i64 %110
-  auto *Value111 =
-      Builder.CreateGEP(PerpsArrTy, M->getNamedValue("compute_normals.perps"),
-                        {ConstantInt64(Ctx, 0), Value29, Value110});
-  dyn_cast<GetElementPtrInst>(Value111)->setIsInBounds(true);
+  auto *Value111 = Builder.CreateInBoundsGEP(
+      PerpsArrTy, M->getNamedValue("compute_normals.perps"),
+      {ConstantInt64(Ctx, 0), Value29, Value110});
   // %112 = getelementptr inbounds [100 x [99 x %struct.line_s]], ptr @compute_normals.perps, i64 0, i64 %110, i64 %78
-  auto *Value112 =
-      Builder.CreateGEP(PerpsArrTy, M->getNamedValue("compute_normals.perps"),
-                        {ConstantInt64(Ctx, 0), Value110, Value78});
-  dyn_cast<GetElementPtrInst>(Value112)->setIsInBounds(true);
+  auto *Value112 = Builder.CreateInBoundsGEP(
+      PerpsArrTy, M->getNamedValue("compute_normals.perps"),
+      {ConstantInt64(Ctx, 0), Value110, Value78});
   // tail call void @llvm.memcpy.p0.p0.i64(ptr noundef nonnull align 4 dereferenceable(12) %111, ptr noundef nonnull align 4 dereferenceable(12) %112, i64 12, i1 false), !tbaa.struct !13
   auto *BB105TailCall2 = Builder.CreateCall(
       Memcpy->getFunctionType(), Memcpy,
@@ -779,18 +769,16 @@ int main() {
   Builder.SetInsertPoint(BB.at(123));
 
   // %124 = getelementptr inbounds %struct.point_s, ptr @generate_points.points, i64 %117
-  auto *Value124 =
-      Builder.CreateGEP(Types.at("struct.point_s"),
-                        M->getNamedValue("generate_points.points"), {Value117});
-  dyn_cast<GetElementPtrInst>(Value124)->setIsInBounds(true);
+  auto *Value124 = Builder.CreateInBoundsGEP(
+      Types.at("struct.point_s"), M->getNamedValue("generate_points.points"),
+      {Value117});
   // %125 = getelementptr i8, ptr %124, i64 4
   auto *Value125 = Builder.CreateGEP(Type::getInt8Ty(Ctx), Value124,
                                      {ConstantInt64(Ctx, 4)});
   // %126 = getelementptr inbounds [100 x %struct.polygon_s], ptr @get_cells.cells, i64 0, i64 %117
   auto *Value126 =
-      Builder.CreateGEP(CellsTy, M->getNamedValue("get_cells.cells"),
-                        {ConstantInt64(Ctx, 0), Value117});
-  dyn_cast<GetElementPtrInst>(Value126)->setIsInBounds(true);
+      Builder.CreateInBoundsGEP(CellsTy, M->getNamedValue("get_cells.cells"),
+                                {ConstantInt64(Ctx, 0), Value117});
   // br label %254
   Builder.CreateBr(BB.at(254));
   // ==========================================================================
@@ -807,24 +795,21 @@ int main() {
   // %131 = add nuw nsw i64 %128, %118
   auto *Value131 = Builder.CreateAdd(Value128, Value118, "", true, true);
   // %132 = getelementptr inbounds %struct.line_s, ptr @compute_normals.perps, i64 %131
-  auto *Value132 =
-      Builder.CreateGEP(Types.at("struct.line_s"),
-                        M->getNamedValue("compute_normals.perps"), {Value131});
-  dyn_cast<GetElementPtrInst>(Value132)->setIsInBounds(true);
+  auto *Value132 = Builder.CreateInBoundsGEP(
+      Types.at("struct.line_s"), M->getNamedValue("compute_normals.perps"),
+      {Value131});
   // %133 = load i32, ptr %132, align 4, !tbaa !19
   auto *Value133 = Builder.CreateAlignedLoad(Int32Ty, Value132, MaybeAlign{4});
   // %134 = getelementptr inbounds %struct.line_s, ptr @compute_normals.perps, i64 %131, i32 1
-  auto *Value134 = Builder.CreateGEP(Types.at("struct.line_s"),
-                                     M->getNamedValue("compute_normals.perps"),
-                                     {Value131, ConstantInt32(Ctx, 1)});
-  dyn_cast<GetElementPtrInst>(Value134)->setIsInBounds(true);
+  auto *Value134 = Builder.CreateInBoundsGEP(
+      Types.at("struct.line_s"), M->getNamedValue("compute_normals.perps"),
+      {Value131, ConstantInt32(Ctx, 1)});
   // %135 = load i32, ptr %134, align 4, !tbaa !21
   auto *Value135 = Builder.CreateAlignedLoad(Int32Ty, Value134, MaybeAlign{4});
   // %136 = getelementptr inbounds %struct.line_s, ptr @compute_normals.perps, i64 %131, i32 2
-  auto *Value136 = Builder.CreateGEP(Types.at("struct.line_s"),
-                                     M->getNamedValue("compute_normals.perps"),
-                                     {Value131, ConstantInt32(Ctx, 2)});
-  dyn_cast<GetElementPtrInst>(Value136)->setIsInBounds(true);
+  auto *Value136 = Builder.CreateInBoundsGEP(
+      Types.at("struct.line_s"), M->getNamedValue("compute_normals.perps"),
+      {Value131, ConstantInt32(Ctx, 2)});
   // %137 = trunc i64 %128 to i32
   auto *Value137 = Builder.CreateTrunc(Value128, Int32Ty);
   // br label %141
@@ -853,15 +838,13 @@ int main() {
   // %144 = add nuw nsw i64 %142, %118
   auto *Value144 = Builder.CreateAdd(Value142, Value118, "", true, true);
   // %145 = getelementptr inbounds %struct.line_s, ptr @compute_normals.perps, i64 %144
-  auto *Value145 =
-      Builder.CreateGEP(Types.at("struct.line_s"),
-                        M->getNamedValue("compute_normals.perps"), {Value144});
-  dyn_cast<GetElementPtrInst>(Value145)->setIsInBounds(true);
+  auto *Value145 = Builder.CreateInBoundsGEP(
+      Types.at("struct.line_s"), M->getNamedValue("compute_normals.perps"),
+      {Value144});
   // %146 = getelementptr inbounds %struct.line_s, ptr @compute_normals.perps, i64 %144, i32 1
-  auto *Value146 = Builder.CreateGEP(Types.at("struct.line_s"),
-                                     M->getNamedValue("compute_normals.perps"),
-                                     {Value144, ConstantInt32(Ctx, 1)});
-  dyn_cast<GetElementPtrInst>(Value146)->setIsInBounds(true);
+  auto *Value146 = Builder.CreateInBoundsGEP(
+      Types.at("struct.line_s"), M->getNamedValue("compute_normals.perps"),
+      {Value144, ConstantInt32(Ctx, 1)});
   // %147 = load i32, ptr %146, align 4, !tbaa !21
   auto *Value147 = Builder.CreateAlignedLoad(Int32Ty, Value146, MaybeAlign{4});
   // %148 = mul nsw i32 %147, %133
@@ -882,10 +865,9 @@ int main() {
   // %153 = sub nsw i32 %148, %150
   auto *Value153 = Builder.CreateNSWSub(Value148, Value150);
   // %154 = getelementptr inbounds %struct.line_s, ptr @compute_normals.perps, i64 %144, i32 2
-  auto *Value154 = Builder.CreateGEP(Types.at("struct.line_s"),
-                                     M->getNamedValue("compute_normals.perps"),
-                                     {Value144, ConstantInt32(Ctx, 2)});
-  dyn_cast<GetElementPtrInst>(Value154)->setIsInBounds(true);
+  auto *Value154 = Builder.CreateInBoundsGEP(
+      Types.at("struct.line_s"), M->getNamedValue("compute_normals.perps"),
+      {Value144, ConstantInt32(Ctx, 2)});
   // %155 = load i32, ptr %154, align 4, !tbaa !22
   auto *Value155 = Builder.CreateAlignedLoad(Int32Ty, Value154, MaybeAlign{4});
   // %156 = mul nsw i32 %155, %135
@@ -915,7 +897,8 @@ int main() {
   // %168 = icmp ult i32 %167, -719
   auto *Value168 = Builder.CreateICmpULT(Value167, ConstantInt32(Ctx, -719));
   // %169 = select i1 %166, i1 true, i1 %168
-  auto *Value169 = Builder.CreateSelect(Value166, ConstantInt::getTrue(Ctx), Value168);
+  auto *Value169 =
+      Builder.CreateSelect(Value166, ConstantInt::getTrue(Ctx), Value168);
   // br i1 %169, label %181, label %170
   Builder.CreateCondBr(Value169, BB.at(181), BB.at(170));
   // ==========================================================================
@@ -924,18 +907,41 @@ int main() {
   Builder.SetInsertPoint(BB.at(170));
 
   // %171 = sext i32 %143 to i64
+  auto *Value171 = Builder.CreateSExt(Value143, Int64Ty);
   // %172 = getelementptr inbounds [5102 x %struct.tagged_point_s], ptr @get_cells.intersections, i64 0, i64 %171
+  auto *Value172 = Builder.CreateInBoundsGEP(
+      IntersectionsTy, M->getNamedValue("get_cells.intersections"),
+      {ConstantInt64(Ctx, 0), Value171});
   // %173 = zext nneg i32 %164 to i64
+  auto *Value173 = Builder.CreateZExt(Value164, Int64Ty);
+  dyn_cast<Instruction>(Value173)->setNonNeg(true);
   // %174 = shl nuw nsw i64 %173, 32
+  auto *Value174 = Builder.CreateShl(Value173, uint64_t{32}, "", true, true);
   // %175 = zext nneg i32 %160 to i64
+  auto *Value175 = Builder.CreateZExt(Value160, Int64Ty);
+  dyn_cast<Instruction>(Value175)->setNonNeg(true);
   // %176 = or disjoint i64 %174, %175
+  auto *Value176 = BinaryOperator::CreateDisjointOr(Value174, Value175);
+  Builder.Insert(Value176);
+  // Builder.CreateOr(Value174, Value175);
   // store i64 %176, ptr %172, align 16
+  Builder.CreateAlignedStore(Value176, Value172, MaybeAlign{16});
   // %177 = getelementptr inbounds [5102 x %struct.tagged_point_s], ptr @get_cells.intersections, i64 0, i64 %171, i32 1
+  auto *Value177 = Builder.CreateInBoundsGEP(
+      IntersectionsTy, M->getNamedValue("get_cells.intersections"),
+      {ConstantInt64(Ctx, 0), Value171, ConstantInt32(Ctx, 1)});
   // store i32 %137, ptr %177, align 8, !tbaa !25
+  Builder.CreateAlignedStore(Value137, Value177, MaybeAlign{8});
   // %178 = add nsw i32 %143, 1
+  auto *Value178 = Builder.CreateNSWAdd(Value143, ConstantInt32(Ctx, 1));
   // %179 = getelementptr inbounds [5102 x %struct.tagged_point_s], ptr @get_cells.intersections, i64 0, i64 %171, i32 2
+  auto *Value179 = Builder.CreateInBoundsGEP(
+      IntersectionsTy, M->getNamedValue("get_cells.intersections"),
+      {ConstantInt64(Ctx, 0), Value171, ConstantInt32(Ctx, 2)});
   // %180 = trunc i64 %142 to i32
+  auto *Value180 = Builder.CreateTrunc(Value142, Int32Ty);
   // store i32 %180, ptr %179, align 4, !tbaa !27
+  Builder.CreateAlignedStore(Value180, Value179, MaybeAlign{4});
   // br label %181
   Builder.CreateBr(BB.at(181));
   // ==========================================================================
@@ -946,30 +952,444 @@ int main() {
   // %182 = phi i32 [ %178, %170 ], [ %143, %152 ], [ %143, %141 ]
   auto *Value182 = Builder.CreatePHI(Int32Ty, 3);
   // %183 = add nuw nsw i64 %142, 1
-  auto *Value183 = Builder.CreateAdd(Value142, ConstantInt64(Ctx, 1), "", true, true);
+  auto *Value183 =
+      Builder.CreateAdd(Value142, ConstantInt64(Ctx, 1), "", true, true);
   // %184 = icmp eq i64 %183, 99
   auto *Value184 = Builder.CreateICmpEQ(Value183, ConstantInt64(Ctx, 99));
   // br i1 %184, label %138, label %141, !llvm.loop !28
   Builder.CreateCondBr(Value184, BB.at(138), BB.at(141));
   // ==========================================================================
 
-#if 0
+  // ================================= BB 185 =================================
+  Builder.SetInsertPoint(BB.at(185));
+
+  // %186 = load i32, ptr %136, align 4, !tbaa !22
+  auto *Value186 = Builder.CreateAlignedLoad(Int32Ty, Value136, MaybeAlign{4});
+  // %187 = sdiv i32 %186, %133
+  auto *Value187 = Builder.CreateSDiv(Value186, Value133);
+  // %188 = icmp ult i32 %187, -719
+  auto *Value188 = Builder.CreateICmpULT(Value187, ConstantInt32(Ctx, -719));
+  // br i1 %188, label %197, label %189
+  Builder.CreateCondBr(Value188, BB.at(197), BB.at(189));
+  // ==========================================================================
+
+  // ================================= BB 189 =================================
+  Builder.SetInsertPoint(BB.at(189));
+
+  // %190 = sub nsw i32 0, %187
+  auto *Value190 = Builder.CreateNSWSub(ConstantInt32(Ctx, 0), Value187);
+  // %191 = sext i32 %182 to i64
+  auto *Value191 = Builder.CreateSExt(Value182, Int64Ty);
+  // %192 = getelementptr inbounds [5102 x %struct.tagged_point_s], ptr @get_cells.intersections, i64 0, i64 %191
+  auto *Value192 = Builder.CreateInBoundsGEP(
+      IntersectionsTy, M->getNamedValue("get_cells.intersections"),
+      {ConstantInt64(Ctx, 0), Value191});
+  // %193 = zext nneg i32 %190 to i64
+  auto *Value193 = Builder.CreateZExt(Value190, Int64Ty);
+  dyn_cast<Instruction>(Value193)->setNonNeg(true);
+  // store i64 %193, ptr %192, align 16
+  Builder.CreateAlignedStore(Value193, Value192, MaybeAlign{16});
+  // %194 = getelementptr inbounds [5102 x %struct.tagged_point_s], ptr @get_cells.intersections, i64 0, i64 %191, i32 1
+  auto *Value194 = Builder.CreateInBoundsGEP(
+      IntersectionsTy, M->getNamedValue("get_cells.intersections"),
+      {ConstantInt64(Ctx, 0), Value191, ConstantInt32(Ctx, 1)});
+  // store i32 %137, ptr %194, align 8, !tbaa !25
+  Builder.CreateAlignedStore(Value137, Value194, MaybeAlign{8});
+  // %195 = add nsw i32 %182, 1
+  auto *Value195 = Builder.CreateNSWAdd(Value182, ConstantInt32(Ctx, 1));
+  // %196 = getelementptr inbounds [5102 x %struct.tagged_point_s], ptr @get_cells.intersections, i64 0, i64 %191, i32 2
+  auto *Value196 = Builder.CreateInBoundsGEP(
+      IntersectionsTy, M->getNamedValue("get_cells.intersections"),
+      {ConstantInt64(Ctx, 0), Value191, ConstantInt32(Ctx, 2)});
+  // store i32 -4, ptr %196, align 4, !tbaa !27
+  Builder.CreateAlignedStore(ConstantInt32(Ctx, -4), Value196, MaybeAlign{4});
+  // br label %197
+  Builder.CreateBr(BB.at(197));
+  // ==========================================================================
+
+  // ================================= BB 197 =================================
+  Builder.SetInsertPoint(BB.at(197));
+
+  // %198 = phi i32 [ %195, %189 ], [ %182, %185 ], [ %182, %138 ]
+  auto *Value198 = Builder.CreatePHI(Int32Ty, 3);
+  // %199 = icmp eq i32 %135, 0
+  auto *Value199 = Builder.CreateICmpEQ(Value135, ConstantInt32(Ctx, 0));
+  // br i1 %199, label %233, label %200
+  Builder.CreateCondBr(Value199, BB.at(233), BB.at(200));
+  // ==========================================================================
+
+  // ================================= BB 200 =================================
+  Builder.SetInsertPoint(BB.at(200));
+
+  // %201 = sub nsw i32 0, %135
+  auto *Value201 = Builder.CreateNSWSub(ConstantInt32(Ctx, 0), Value135);
+  // %202 = load i32, ptr %136, align 4, !tbaa !22
+  auto *Value202 = Builder.CreateAlignedLoad(Int32Ty, Value136, MaybeAlign{4});
+  // %203 = sdiv i32 %202, %201
+  auto *Value203 = Builder.CreateSDiv(Value202, Value201);
+  // %204 = add i32 %203, -720
+  auto *Value204 = Builder.CreateAdd(Value203, ConstantInt32(Ctx, -720));
+  // %205 = icmp ult i32 %204, -719
+  auto *Value205 = Builder.CreateICmpULT(Value204, ConstantInt32(Ctx, -719));
+  // br i1 %205, label %214, label %206
+  Builder.CreateCondBr(Value205, BB.at(214), BB.at(206));
+  // ==========================================================================
+
+  // ================================= BB 206 =================================
+  Builder.SetInsertPoint(BB.at(206));
+
+  // %207 = sext i32 %198 to i64
+  auto *Value207 = Builder.CreateSExt(Value198, Int64Ty);
+  // %208 = getelementptr inbounds [5102 x %struct.tagged_point_s], ptr @get_cells.intersections, i64 0, i64 %207
+  auto *Value208 = Builder.CreateInBoundsGEP(
+      IntersectionsTy, M->getNamedValue("get_cells.intersections"),
+      {ConstantInt64(Ctx, 0), Value207});
+  // %209 = zext nneg i32 %203 to i64
+  auto *Value209 = Builder.CreateZExt(Value203, Int64Ty);
+  dyn_cast<Instruction>(Value209)->setNonNeg(true);
+  // %210 = shl nuw nsw i64 %209, 32
+  auto *Value210 = Builder.CreateShl(Value209, uint64_t{32}, "", true, true);
+  // store i64 %210, ptr %208, align 16
+  Builder.CreateAlignedStore(Value210, Value208, MaybeAlign{16});
+  // %211 = getelementptr inbounds [5102 x %struct.tagged_point_s], ptr @get_cells.intersections, i64 0, i64 %207, i32 1
+  auto *Value211 = Builder.CreateInBoundsGEP(
+      IntersectionsTy, M->getNamedValue("get_cells.intersections"),
+      {ConstantInt64(Ctx, 0), Value207, ConstantInt32(Ctx, 1)});
+  // store i32 %137, ptr %211, align 8, !tbaa !25
+  Builder.CreateAlignedStore(Value137, Value211, MaybeAlign{8});
+  // %212 = add nsw i32 %198, 1
+  auto *Value212 = Builder.CreateNSWAdd(Value198, ConstantInt32(Ctx, 1));
+  // %213 = getelementptr inbounds [5102 x %struct.tagged_point_s], ptr @get_cells.intersections, i64 0, i64 %207, i32 2
+  auto *Value213 = Builder.CreateInBoundsGEP(
+      IntersectionsTy, M->getNamedValue("get_cells.intersections"),
+      {ConstantInt64(Ctx, 0), Value207, ConstantInt32(Ctx, 2)});
+  // store i32 -3, ptr %213, align 4, !tbaa !27
+  Builder.CreateAlignedStore(ConstantInt32(Ctx, -3), Value213, MaybeAlign{4});
+  // br label %214
+  Builder.CreateBr(BB.at(214));
+  // ==========================================================================
+
+  // ================================= BB 214 =================================
+  Builder.SetInsertPoint(BB.at(214));
+
+  // %215 = phi i32 [ %198, %200 ], [ %212, %206 ]
+  auto *Value215 = Builder.CreatePHI(Int32Ty, 2);
+  // %216 = mul i32 %133, 720
+  auto *Value216 = Builder.CreateMul(Value133, ConstantInt32(Ctx, 720));
+  // %217 = add i32 %202, %216
+  auto *Value217 = Builder.CreateAdd(Value202, Value216);
+  // %218 = sdiv i32 %217, %201
+  auto *Value218 = Builder.CreateSDiv(Value217, Value201);
+  // %219 = add i32 %218, -720
+  auto *Value219 = Builder.CreateAdd(Value218, ConstantInt32(Ctx, -720));
+  // %220 = icmp ult i32 %219, -719
+  auto *Value220 = Builder.CreateICmpULT(Value219, ConstantInt32(Ctx, -719));
+  // br i1 %220, label %233, label %221
+  Builder.CreateCondBr(Value220, BB.at(233), BB.at(221));
+  // ==========================================================================
+
+  // ================================= BB 221 =================================
+  Builder.SetInsertPoint(BB.at(221));
+
+  // %222 = mul nsw i32 %135, -720
+  auto *Value222 = Builder.CreateNSWMul(Value135, ConstantInt32(Ctx, -720));
+  // %223 = sdiv i32 %222, %201
+  auto *Value223 = Builder.CreateSDiv(Value222, Value201);
+  // %224 = sext i32 %215 to i64
+  auto *Value224 = Builder.CreateSExt(Value215, Int64Ty);
+  // %225 = getelementptr inbounds [5102 x %struct.tagged_point_s], ptr @get_cells.intersections, i64 0, i64 %224
+  auto *Value225 = Builder.CreateInBoundsGEP(
+      IntersectionsTy, M->getNamedValue("get_cells.intersections"),
+      {ConstantInt64(Ctx, 0), Value224});
+  // %226 = zext nneg i32 %218 to i64
+  auto *Value226 = Builder.CreateZExt(Value218, Int64Ty);
+  dyn_cast<Instruction>(Value226)->setNonNeg(true);
+  // %227 = shl nuw nsw i64 %226, 32
+  auto *Value227 = Builder.CreateShl(Value226, uint64_t{32}, "", true, true);
+  // %228 = zext i32 %223 to i64
+  auto *Value228 = Builder.CreateZExt(Value223, Int64Ty);
+  // %229 = or disjoint i64 %227, %228
+  auto *Value229 = BinaryOperator::CreateDisjointOr(Value227, Value228);
+  Builder.Insert(Value229);
+  // store i64 %229, ptr %225, align 16
+  Builder.CreateAlignedStore(Value229, Value225, MaybeAlign{16});
+  // %230 = getelementptr inbounds [5102 x %struct.tagged_point_s], ptr @get_cells.intersections, i64 0, i64 %224, i32 1
+  auto *Value230 = Builder.CreateInBoundsGEP(
+      IntersectionsTy, M->getNamedValue("get_cells.intersections"),
+      {ConstantInt64(Ctx, 0), Value224, ConstantInt32(Ctx, 1)});
+  // store i32 %137, ptr %230, align 8, !tbaa !25
+  Builder.CreateAlignedStore(Value137, Value230, MaybeAlign{8});
+  // %231 = add nsw i32 %215, 1
+  auto *Value231 = Builder.CreateNSWAdd(Value215, ConstantInt32(Ctx, 1));
+  // %232 = getelementptr inbounds [5102 x %struct.tagged_point_s], ptr @get_cells.intersections, i64 0, i64 %224, i32 2
+  auto *Value232 = Builder.CreateInBoundsGEP(
+      IntersectionsTy, M->getNamedValue("get_cells.intersections"),
+      {ConstantInt64(Ctx, 0), Value224, ConstantInt32(Ctx, 2)});
+  // store i32 -2, ptr %232, align 4, !tbaa !27
+  Builder.CreateAlignedStore(ConstantInt32(Ctx, -2), Value232, MaybeAlign{4});
+  // br label %233
+  Builder.CreateBr(BB.at(233));
+  // ==========================================================================
+
+  // ================================= BB 233 =================================
+  Builder.SetInsertPoint(BB.at(233));
+
+  // %234 = phi i32 [ %231, %221 ], [ %215, %214 ], [ %198, %197 ]
+  auto *Value234 = Builder.CreatePHI(Int32Ty, 3);
+  // br i1 %140, label %250, label %235
+  Builder.CreateCondBr(Value140, BB.at(250), BB.at(235));
+  // ==========================================================================
+
+  // ================================= BB 235 =================================
+  Builder.SetInsertPoint(BB.at(235));
+
+  // %236 = mul nsw i32 %135, -720
+  auto *Value236 = Builder.CreateNSWMul(Value135, ConstantInt32(Ctx, -720));
+  // %237 = load i32, ptr %136, align 4, !tbaa !22
+  auto *Value237 = Builder.CreateAlignedLoad(Int32Ty, Value136, MaybeAlign{4});
+  // %238 = sub nsw i32 %236, %237
+  auto *Value238 = Builder.CreateNSWSub(Value236, Value237);
+  // %239 = sdiv i32 %238, %133
+  auto *Value239 = Builder.CreateSDiv(Value238, Value133);
+  // %240 = add i32 %239, -720
+  auto *Value240 = Builder.CreateAdd(Value239, ConstantInt32(Ctx, -720));
+  // %241 = icmp ult i32 %240, -719
+  auto *Value241 = Builder.CreateICmpULT(Value240, ConstantInt32(Ctx, -719));
+  // br i1 %241, label %250, label %242
+  Builder.CreateCondBr(Value241, BB.at(250), BB.at(242));
+  // ==========================================================================
+
+  // ================================= BB 242 =================================
+  Builder.SetInsertPoint(BB.at(242));
+
+  // %243 = sext i32 %234 to i64
+  auto *Value243 = Builder.CreateSExt(Value234, Int64Ty);
+  // %244 = getelementptr inbounds [5102 x %struct.tagged_point_s], ptr @get_cells.intersections, i64 0, i64 %243
+  auto *Value244 = Builder.CreateInBoundsGEP(
+      IntersectionsTy, M->getNamedValue("get_cells.intersections"),
+      {ConstantInt64(Ctx, 0), Value243});
+  // %245 = zext nneg i32 %239 to i64
+  auto *Value245 = Builder.CreateZExt(Value239, Int64Ty);
+  dyn_cast<Instruction>(Value245)->setNonNeg(true);
+  // %246 = or disjoint i64 %245, 3092376453120
+  auto *Value246 = BinaryOperator::CreateDisjointOr(
+      Value245, ConstantInt64(Ctx, 3092376453120));
+  Builder.Insert(Value246);
+  // store i64 %246, ptr %244, align 16
+  Builder.CreateAlignedStore(Value246, Value244, MaybeAlign{16});
+  // %247 = getelementptr inbounds [5102 x %struct.tagged_point_s], ptr @get_cells.intersections, i64 0, i64 %243, i32 1
+  auto *Value247 = Builder.CreateInBoundsGEP(
+      IntersectionsTy, M->getNamedValue("get_cells.intersections"),
+      {ConstantInt64(Ctx, 0), Value243, ConstantInt32(Ctx, 1)});
+  // store i32 %137, ptr %247, align 8, !tbaa !25
+  Builder.CreateAlignedStore(Value137, Value247, MaybeAlign{8});
+  // %248 = add nsw i32 %234, 1
+  auto *Value248 = Builder.CreateNSWAdd(Value234, ConstantInt32(Ctx, 1));
+  // %249 = getelementptr inbounds [5102 x %struct.tagged_point_s], ptr @get_cells.intersections, i64 0, i64 %243, i32 2
+  auto *Value249 = Builder.CreateInBoundsGEP(
+      IntersectionsTy, M->getNamedValue("get_cells.intersections"),
+      {ConstantInt64(Ctx, 0), Value243, ConstantInt32(Ctx, 2)});
+  // store i32 -1, ptr %249, align 4, !tbaa !27
+  Builder.CreateAlignedStore(ConstantInt32(Ctx, -1), Value249, MaybeAlign{4});
+  // br label %250
+  Builder.CreateBr(BB.at(250));
+  // ==========================================================================
+
+  // ================================= BB 250 =================================
+  Builder.SetInsertPoint(BB.at(250));
+
+  // %251 = phi i32 [ %248, %242 ], [ %234, %235 ], [ %234, %233 ]
+  auto *Value251 = Builder.CreatePHI(Int32Ty, 3);
+  // %252 = icmp eq i64 %139, 98
+  auto *Value252 = Builder.CreateICmpEQ(Value139, ConstantInt64(Ctx, 98));
+  // %253 = add nuw nsw i64 %129, 1
+  auto *Value253 =
+      Builder.CreateAdd(Value129, ConstantInt64(Ctx, 1), "", true, true);
+  // br i1 %252, label %119, label %127, !llvm.loop !29
+  Builder.CreateCondBr(Value252, BB.at(119), BB.at(127));
+  // ==========================================================================
+
   // ================================= BB 119 =================================
   Builder.SetInsertPoint(BB.at(119));
 
   // %120 = sext i32 %251 to i64
   auto *Value120 = Builder.CreateSExt(Value251, Int64Ty);
   // %121 = getelementptr inbounds %struct.tagged_point_s, ptr @get_cells.intersections, i64 %120
-  auto *Value121 = Builder.CreateGEP(
+  auto *Value121 = Builder.CreateInBoundsGEP(
       Types.at("struct.tagged_point_s"),
       M->getNamedValue("get_cells.intersections"), {Value120});
-  dyn_cast<GetElementPtrInst>(Value121)->setIsInBounds(true);
   // %122 = icmp eq i32 %251, 0
   auto *Value122 = Builder.CreateICmpEQ(Value251, ConstantInt32(Ctx, 0));
   // br i1 %122, label %264, label %123
   Builder.CreateCondBr(Value122, BB.at(264), BB.at(123));
   // ==========================================================================
-#endif
+
+  // ================================= BB 254 =================================
+  Builder.SetInsertPoint(BB.at(254));
+
+  // %255 = phi ptr [ @get_cells.intersections, %123 ], [ %420, %418 ]
+  auto *Value255 = Builder.CreatePHI(PointerType::getUnqual(Ctx), 2);
+  // %256 = phi i32 [ 0, %123 ], [ %419, %418 ]
+  auto *Value256 = Builder.CreatePHI(Int32Ty, 2);
+  // %257 = getelementptr inbounds %struct.tagged_point_s, ptr %255, i64 0, i32 1
+  auto *Value257 =
+      Builder.CreateInBoundsGEP(Types.at("struct.tagged_point_s"), Value255,
+                                {ConstantInt64(Ctx, 0), ConstantInt32(Ctx, 1)});
+  // %258 = load i32, ptr %257, align 4, !tbaa !25
+  auto *Value258 = Builder.CreateAlignedLoad(Int32Ty, Value257, MaybeAlign{4});
+  // %259 = getelementptr inbounds %struct.tagged_point_s, ptr %255, i64 0, i32 2
+  auto *Value259 =
+      Builder.CreateInBoundsGEP(Types.at("struct.tagged_point_s"), Value255,
+                                {ConstantInt64(Ctx, 0), ConstantInt32(Ctx, 2)});
+  // %260 = getelementptr i8, ptr %255, i64 4
+  auto *Value260 = Builder.CreateGEP(Type::getInt8Ty(Ctx), Value255,
+                                     {ConstantInt64(Ctx, 4)});
+  // %261 = zext i32 %258 to i64
+  auto *Value261 = Builder.CreateZExt(Value258, Int64Ty);
+  // %262 = icmp eq i32 %258, -4
+  auto *Value262 = Builder.CreateICmpEQ(Value258, ConstantInt32(Ctx, -4));
+  // %263 = load i32, ptr %259, align 4, !tbaa !27
+  auto *Value263 = Builder.CreateAlignedLoad(Int32Ty, Value259, MaybeAlign{4});
+  // br i1 %262, label %325, label %311
+  Builder.CreateCondBr(Value262, BB.at(325), BB.at(311));
+  // ==========================================================================
+
+  // ================================= BB 264 =================================
+  Builder.SetInsertPoint(BB.at(264));
+
+  // %265 = phi i32 [ 0, %119 ], [ %419, %418 ]
+  auto *Value265 = Builder.CreatePHI(Int32Ty, 2);
+  // %266 = getelementptr inbounds [100 x %struct.polygon_s], ptr @get_cells.cells, i64 0, i64 %117
+  auto *Value266 =
+      Builder.CreateInBoundsGEP(CellsTy, M->getNamedValue("get_cells.cells"),
+                                {ConstantInt64(Ctx, 0), Value117});
+  // %267 = getelementptr inbounds [100 x %struct.polygon_s], ptr @get_cells.cells, i64 0, i64 %117, i32 1
+  auto *Value267 = Builder.CreateInBoundsGEP(
+      CellsTy, M->getNamedValue("get_cells.cells"),
+      {ConstantInt64(Ctx, 0), Value117, ConstantInt32(Ctx, 1)});
+  // store i32 %265, ptr %267, align 4, !tbaa !30
+  Builder.CreateAlignedStore(Value265, Value267, MaybeAlign{4});
+  // %268 = getelementptr inbounds %struct.point_s, ptr @generate_points.points, i64 %117
+  auto *Value268 = Builder.CreateInBoundsGEP(
+      Types.at("struct.point_s"), M->getNamedValue("generate_points.points"),
+      {Value117});
+  // %269 = load i64, ptr %268, align 8
+  auto *Value269 = Builder.CreateAlignedLoad(Int64Ty, Value268, MaybeAlign{8});
+  // store i64 %269, ptr @center, align 8
+  Builder.CreateAlignedStore(Value269, M->getNamedValue("center"),
+                             MaybeAlign{8});
+  // %270 = icmp eq i32 %265, 1
+  auto *Value270 = Builder.CreateICmpEQ(Value265, ConstantInt32(Ctx, 1));
+  // br i1 %270, label %308, label %271
+  Builder.CreateCondBr(Value270, BB.at(308), BB.at(271));
+  // ==========================================================================
+
+  // ================================= BB 271 =================================
+  Builder.SetInsertPoint(BB.at(271));
+
+  // %272 = zext i32 %265 to i64
+  auto *Value272 = Builder.CreateZExt(Value265, Int64Ty);
+  // br label %273
+  Builder.CreateBr(BB.at(273));
+  // ==========================================================================
+
+  // ================================= BB 273 =================================
+  Builder.SetInsertPoint(BB.at(273));
+
+  // %274 = phi i64 [ 1, %271 ], [ %279, %278 ]
+  auto *Value274 = Builder.CreatePHI(Int64Ty, 2);
+  // %275 = trunc i64 %274 to i32
+  auto *Value275 = Builder.CreateTrunc(Value274, Int32Ty);
+  // %276 = sub i32 %265, %275
+  auto *Value276 = Builder.CreateSub(Value265, Value275);
+  // %277 = zext i32 %276 to i64
+  auto *Value277 = Builder.CreateZExt(Value276, Int64Ty);
+  // br label %281
+  Builder.CreateBr(BB.at(281));
+  // ==========================================================================
+
+  // ================================= BB 278 =================================
+  Builder.SetInsertPoint(BB.at(278));
+
+  // %279 = add nuw nsw i64 %274, 1
+  auto *Value279 =
+      Builder.CreateAdd(Value274, ConstantInt64(Ctx, 1), "", true, true);
+  // %280 = icmp eq i64 %279, %272
+  auto *Value280 = Builder.CreateICmpEQ(Value279, Value272);
+  // br i1 %280, label %308, label %273, !llvm.loop !32
+  Builder.CreateCondBr(Value280, BB.at(308), BB.at(273));
+  // ==========================================================================
+
+  // ================================= BB 281 =================================
+  Builder.SetInsertPoint(BB.at(281));
+
+  // %282 = phi i64 [ 0, %273 ], [ %284, %306 ]
+  auto *Value282 = Builder.CreatePHI(Int64Ty, 2);
+  // %283 = getelementptr inbounds %struct.point_s, ptr %266, i64 %282
+  auto *Value283 = Builder.CreateInBoundsGEP(Types.at("struct.point_s"),
+                                             Value266, {Value282});
+  // %284 = add nuw nsw i64 %282, 1
+  auto *Value284 =
+      Builder.CreateAdd(Value282, ConstantInt64(Ctx, 1), "", true, true);
+  // %285 = getelementptr inbounds %struct.point_s, ptr %266, i64 %284
+  auto *Value285 = Builder.CreateInBoundsGEP(Types.at("struct.point_s"),
+                                             Value266, {Value284});
+  // %286 = load i32, ptr %283, align 4, !tbaa !5
+  auto *Value286 = Builder.CreateAlignedLoad(Int32Ty, Value283, MaybeAlign{4});
+  // %287 = getelementptr i8, ptr %283, i64 4
+  auto *Value287 = Builder.CreateGEP(Type::getInt8Ty(Ctx), Value283,
+                                     {ConstantInt64(Ctx, 4)});
+  // %288 = load i32, ptr %287, align 4, !tbaa !10
+  auto *Value288 = Builder.CreateAlignedLoad(Int32Ty, Value287, MaybeAlign{4});
+  // %289 = load i32, ptr getelementptr inbounds (%struct.point_s, ptr @center, i64 0, i32 1), align 4, !tbaa !10
+  auto *GetElementPtrTmp1 = GetElementPtrInst::CreateInBounds(
+      Types.at("struct.point_s"), M->getNamedValue("center"),
+      {ConstantInt64(Ctx, 0), ConstantInt32(Ctx, 1)});
+  Builder.Insert(GetElementPtrTmp1);
+  auto *Value289 =
+      Builder.CreateAlignedLoad(Int32Ty, GetElementPtrTmp1, MaybeAlign{4});
+  // %290 = sub nsw i32 %288, %289
+  auto *Value290 = Builder.CreateNSWSub(Value288, Value289);
+  // %291 = load i32, ptr @center, align 8, !tbaa !5
+  auto *Value291 = Builder.CreateAlignedLoad(
+      Int32Ty, M->getNamedValue("center"), MaybeAlign{8});
+  // %292 = sub nsw i32 %286, %291
+  auto *Value292 = Builder.CreateNSWSub(Value286, Value291);
+  // %293 = tail call i32 @atan2_int(i32 noundef %290, i32 noundef %292) #4
+  auto *Value293 = Builder.CreateCall(Atan2Int->getFunctionType(), Atan2Int,
+                                      {Value290, Value292});
+  Value293->setTailCall(true);
+  // %294 = getelementptr inbounds %struct.point_s, ptr %266, i64 %284, i32 1
+  auto *Value294 = Builder.CreateInBoundsGEP(
+      Types.at("struct.point_s"), Value266, {Value284, ConstantInt32(Ctx, 1)});
+  // %295 = load i32, ptr %294, align 4, !tbaa !10
+  auto *Value295 = Builder.CreateAlignedLoad(Int32Ty, Value294, MaybeAlign{4});
+  // %296 = load i32, ptr getelementptr inbounds (%struct.point_s, ptr @center, i64 0, i32 1), align 4, !tbaa !10
+  auto *GetElementPtrTmp2 = GetElementPtrInst::CreateInBounds(
+      Types.at("struct.point_s"), M->getNamedValue("center"),
+      {ConstantInt64(Ctx, 0), ConstantInt32(Ctx, 1)});
+  Builder.Insert(GetElementPtrTmp2);
+  auto *Value296 =
+      Builder.CreateAlignedLoad(Int32Ty, GetElementPtrTmp2, MaybeAlign{4});
+  // %297 = sub nsw i32 %295, %296
+  auto *Value297 = Builder.CreateNSWSub(Value295, Value296);
+  // %298 = load i32, ptr %285, align 4, !tbaa !5
+  auto *Value298 = Builder.CreateAlignedLoad(Int32Ty, Value285, MaybeAlign{4});
+  // %299 = load i32, ptr @center, align 8, !tbaa !5
+  auto *Value299 = Builder.CreateAlignedLoad(
+      Int32Ty, M->getNamedValue("center"), MaybeAlign{8});
+  // %300 = sub nsw i32 %298, %299
+  auto *Value300 = Builder.CreateNSWSub(Value298, Value299);
+  // %301 = tail call i32 @atan2_int(i32 noundef %297, i32 noundef %300) #4
+  auto *Value301 = Builder.CreateCall(Atan2Int->getFunctionType(), Atan2Int,
+                                      {Value297, Value300});
+  Value301->setTailCall(true);
+  // %302 = icmp sgt i32 %293, %301
+  auto *Value302 = Builder.CreateICmpSGT(Value293, Value301);
+  // br i1 %302, label %303, label %306
+  Builder.CreateCondBr(Value302, BB.at(303), BB.at(306));
+  // ==========================================================================
+
   M->print(outs(), nullptr);
 
   return 0;
