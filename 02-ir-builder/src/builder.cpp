@@ -16,6 +16,7 @@
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Type.h"
+#include "llvm/IR/Verifier.h"
 #include "llvm/Support/raw_ostream.h"
 
 using namespace llvm;
@@ -328,10 +329,10 @@ int main() {
   auto *Int64Ty = Type::getInt64Ty(Ctx);
   auto *Int32Vec4 = FixedVectorType::get(Int32Ty, 4);
   auto *Int32Vec8 = FixedVectorType::get(Int32Ty, 8);
-  auto *PerpsArrTy = M->getNamedValue("compute_normals.perps")->getType();
-  auto *CellsTy = M->getNamedValue("get_cells.cells")->getType();
+  auto *PerpsArrTy = M->getNamedValue("compute_normals.perps")->getValueType();
+  auto *CellsTy = M->getNamedValue("get_cells.cells")->getValueType();
   auto *IntersectionsTy =
-      M->getNamedValue("get_cells.intersections")->getType();
+      ArrayType::get(Types.at("struct.tagged_point_s"), 5102);
   IRBuilder<> Builder{Ctx};
 
   BBMap BB;
@@ -432,7 +433,7 @@ int main() {
   Builder.SetInsertPoint(BB.at(23));
 
   // %24 = add nuw nsw i64 %30, 1
-  Builder.CreateNUWAdd(Value30, ConstantInt64(Ctx, 1));
+  auto *Value24 = Builder.CreateNUWAdd(Value30, ConstantInt64(Ctx, 1));
   // br i1 %33, label %116, label %25
   Builder.CreateCondBr(Value33, BB.at(116), BB.at(25));
   // ==========================================================================
@@ -1520,7 +1521,7 @@ int main() {
   Builder.SetInsertPoint(BB.at(341));
 
   // %342 = load i32, ptr %124, align 8, !tbaa !5
-  auto *Value342 = Builder.CreateAlignedLoad(Int32Ty, Value144, MaybeAlign{8});
+  auto *Value342 = Builder.CreateAlignedLoad(Int32Ty, Value124, MaybeAlign{8});
   // %343 = load i32, ptr %255, align 4, !tbaa !5
   auto *Value343 = Builder.CreateAlignedLoad(Int32Ty, Value255, MaybeAlign{4});
   // %344 = icmp sgt i32 %342, 720
@@ -1539,7 +1540,7 @@ int main() {
       Builder.CreateSelect(Value347, Value348, ConstantInt::getFalse(Ctx));
   // %350 = select i1 %346, i1 true, i1 %349
   auto *Value350 =
-      Builder.CreateSelect(Value346, ConstantInt::getTrue(Ctx), Value335);
+      Builder.CreateSelect(Value346, ConstantInt::getTrue(Ctx), Value349);
   // br i1 %350, label %351, label %418
   Builder.CreateCondBr(Value350, BB.at(351), BB.at(418));
   // ==========================================================================
@@ -2042,7 +2043,7 @@ int main() {
   // %505 = phi i32 [ 0, %471 ], [ %499, %497 ]
   auto *Value505 = Builder.CreatePHI(Int32Ty, 2);
   // %506 = phi i32 [ 0, %471 ], [ %501, %497 ]
-  auto *Value5056 = Builder.CreatePHI(Int32Ty, 2);
+  auto *Value506 = Builder.CreatePHI(Int32Ty, 2);
   // br label %507
   Builder.CreateBr(BB.at(507));
   // ==========================================================================
@@ -2111,6 +2112,159 @@ int main() {
   // br i1 %529, label %25, label %464, !llvm.loop !15
   Builder.CreateCondBr(Value529, BB.at(25), BB.at(464));
   // ==========================================================================
+
+  Value2->addIncoming(ConstantInt64(Ctx, 0), BB.at(0));
+  Value2->addIncoming(Value15, BB.at(1));
+
+  Value18->addIncoming(ConstantInt64(Ctx, 0), BB.at(77));
+  Value18->addIncoming(Value113, BB.at(105));
+
+  Value26->addIncoming(Value32, BB.at(23));
+  Value26->addIncoming(ConstantInt64(Ctx, 0), BB.at(519));
+
+  Value27->addIncoming(Value24, BB.at(23));
+  Value27->addIncoming(ConstantInt64(Ctx, 1), BB.at(519));
+
+  Value29->addIncoming(Value26, BB.at(25));
+  Value29->addIncoming(ConstantInt64(Ctx, 0), BB.at(1));
+
+  Value30->addIncoming(Value27, BB.at(25));
+  Value30->addIncoming(ConstantInt64(Ctx, 1), BB.at(1));
+
+  Value48->addIncoming(ConstantInt64(Ctx, 0), BB.at(40));
+  Value48->addIncoming(Value69, BB.at(47));
+
+  Value74->addIncoming(Value30, BB.at(34));
+  Value74->addIncoming(Value42, BB.at(71));
+
+  Value84->addIncoming(Value103, BB.at(83));
+  Value84->addIncoming(Value74, BB.at(73));
+
+  Value106->addIncoming(ConstantInt64(Ctx, 0), BB.at(81));
+  Value106->addIncoming(Value113, BB.at(105));
+
+  Value107->addIncoming(ConstantInt64(Ctx, 0), BB.at(81));
+  Value107->addIncoming(Value114, BB.at(105));
+
+  Value117->addIncoming(Value309, BB.at(308));
+  Value117->addIncoming(ConstantInt64(Ctx, 0), BB.at(23));
+
+  Value128->addIncoming(ConstantInt64(Ctx, 0), BB.at(116));
+  Value128->addIncoming(Value139, BB.at(250));
+
+  Value129->addIncoming(ConstantInt64(Ctx, 1), BB.at(116));
+  Value129->addIncoming(Value253, BB.at(250));
+
+  Value130->addIncoming(ConstantInt32(Ctx, 4), BB.at(116));
+  Value130->addIncoming(Value251, BB.at(250));
+
+  Value142->addIncoming(Value129, BB.at(127));
+  Value142->addIncoming(Value183, BB.at(181));
+
+  Value143->addIncoming(Value130, BB.at(127));
+  Value143->addIncoming(Value182, BB.at(181));
+
+  Value182->addIncoming(Value178, BB.at(170));
+  Value182->addIncoming(Value143, BB.at(152));
+  Value182->addIncoming(Value143, BB.at(141));
+
+  Value198->addIncoming(Value195, BB.at(189));
+  Value198->addIncoming(Value182, BB.at(185));
+  Value198->addIncoming(Value182, BB.at(138));
+
+  Value215->addIncoming(Value198, BB.at(200));
+  Value215->addIncoming(Value212, BB.at(206));
+
+  Value234->addIncoming(Value231, BB.at(221));
+  Value234->addIncoming(Value215, BB.at(214));
+  Value234->addIncoming(Value198, BB.at(197));
+
+  Value251->addIncoming(Value248, BB.at(242));
+  Value251->addIncoming(Value234, BB.at(235));
+  Value251->addIncoming(Value234, BB.at(233));
+
+  Value255->addIncoming(M->getNamedValue("get_cells.intersections"),
+                        BB.at(123));
+  Value255->addIncoming(Value420, BB.at(418));
+
+  Value256->addIncoming(ConstantInt32(Ctx, 0), BB.at(123));
+  Value256->addIncoming(Value419, BB.at(418));
+
+  Value265->addIncoming(ConstantInt32(Ctx, 0), BB.at(119));
+  Value265->addIncoming(Value419, BB.at(418));
+
+  Value274->addIncoming(ConstantInt64(Ctx, 1), BB.at(271));
+  Value274->addIncoming(Value279, BB.at(278));
+
+  Value282->addIncoming(ConstantInt64(Ctx, 0), BB.at(273));
+  Value282->addIncoming(Value284, BB.at(306));
+
+  Value370->addIncoming(ConstantInt64(Ctx, 0), BB.at(367));
+  Value370->addIncoming(Value411, BB.at(410));
+
+  Value419->addIncoming(Value414, BB.at(413));
+  Value419->addIncoming(Value256, BB.at(357));
+  Value419->addIncoming(Value256, BB.at(341));
+  Value419->addIncoming(Value256, BB.at(327));
+  Value419->addIncoming(Value256, BB.at(313));
+  Value419->addIncoming(Value256, BB.at(374));
+
+  Value424->addIncoming(ConstantInt64(Ctx, 0), BB.at(422));
+  Value424->addIncoming(Value429, BB.at(423));
+
+  Value433->addIncoming(Value450, BB.at(441));
+  Value433->addIncoming(ConstantInt64(Ctx, 0), BB.at(423));
+
+  Value453->addIncoming(ConstantInt64(Ctx, 0), BB.at(439));
+  Value453->addIncoming(Value458, BB.at(452));
+
+  Value465->addIncoming(ConstantInt64(Ctx, 0), BB.at(431));
+  Value465->addIncoming(Value528, BB.at(519));
+
+  Value477->addIncoming(ConstantInt64(Ctx, 0), BB.at(474));
+  Value477->addIncoming(Value495, BB.at(476));
+
+  Value478->addIncoming(Constant::getNullValue(Int32Vec4), BB.at(474));
+  Value478->addIncoming(Value493, BB.at(476));
+
+  Value479->addIncoming(Constant::getNullValue(Int32Vec4), BB.at(474));
+  Value479->addIncoming(Value494, BB.at(476));
+
+  Value480->addIncoming(Constant::getNullValue(Int32Vec4), BB.at(474));
+  Value480->addIncoming(Value491, BB.at(476));
+
+  Value481->addIncoming(Constant::getNullValue(Int32Vec4), BB.at(474));
+  Value481->addIncoming(Value492, BB.at(476));
+
+  Value504->addIncoming(ConstantInt64(Ctx, 0), BB.at(471));
+  Value504->addIncoming(Value475, BB.at(497));
+
+  Value505->addIncoming(ConstantInt32(Ctx, 0), BB.at(471));
+  Value505->addIncoming(Value499, BB.at(497));
+
+  Value506->addIncoming(ConstantInt32(Ctx, 0), BB.at(471));
+  Value506->addIncoming(Value501, BB.at(497));
+
+  Value508->addIncoming(Value517, BB.at(507));
+  Value508->addIncoming(Value504, BB.at(503));
+
+  Value509->addIncoming(Value516, BB.at(507));
+  Value509->addIncoming(Value505, BB.at(503));
+
+  Value510->addIncoming(Value513, BB.at(507));
+  Value510->addIncoming(Value506, BB.at(503));
+
+  Value520->addIncoming(ConstantInt32(Ctx, 0), BB.at(464));
+  Value520->addIncoming(Value501, BB.at(497));
+  Value520->addIncoming(Value513, BB.at(507));
+
+  Value521->addIncoming(ConstantInt32(Ctx, 0), BB.at(464));
+  Value521->addIncoming(Value499, BB.at(497));
+  Value521->addIncoming(Value516, BB.at(507));
+
+  bool IsBroken = verifyModule(*M.get(), &errs());
+  if (IsBroken)
+    return 1;
 
   M->print(outs(), nullptr);
 
