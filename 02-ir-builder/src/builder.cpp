@@ -2288,7 +2288,7 @@ int main() {
       return reinterpret_cast<void *>(draw_line);
     }
     if (FnName == "update_screen") {
-      return reinterpret_cast<void *>(draw_line);
+      return reinterpret_cast<void *>(update_screen);
     }
     if (FnName == "Rand") {
       return reinterpret_cast<void *>(Rand);
