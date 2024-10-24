@@ -382,7 +382,7 @@ int main() {
   Builder.CreateAlignedStore(Value7, Value8, MaybeAlign{8});
   // %9 = tail call i32 @Rand() #4
   auto *Value9 = Builder.CreateCall(RandFn->getFunctionType(), RandFn);
-  Value3->setTailCall(true);
+  Value9->setTailCall(true);
   // %10 = srem i32 %9, 720
   auto *Value10 = Builder.CreateSRem(Value9, ConstantInt32(Ctx, 720));
   // %11 = icmp slt i32 %10, 10
@@ -402,7 +402,8 @@ int main() {
   // store i32 %13, ptr %14, align 4, !tbaa !10
   Builder.CreateAlignedStore(Value13, Value14, MaybeAlign{4});
   // %15 = add nuw nsw i64 %2, 1
-  auto *Value15 = Builder.CreateNUWAdd(Value2, ConstantInt64(Ctx, 1));
+  auto *Value15 =
+      Builder.CreateAdd(Value2, ConstantInt64(Ctx, 1), "", true, true);
   // %16 = icmp eq i64 %15, 100
   auto *Value16 = Builder.CreateICmpEQ(Value15, ConstantInt64(Ctx, 100));
   // br i1 %16, label %28, label %1, !llvm.loop !11
@@ -430,7 +431,8 @@ int main() {
   // %31 = sub nsw i64 99, %29
   auto *Value31 = Builder.CreateNSWSub(ConstantInt64(Ctx, 99), Value29);
   // %32 = add nuw nsw i64 %29, 1
-  auto *Value32 = Builder.CreateNUWAdd(Value29, ConstantInt64(Ctx, 1));
+  auto *Value32 =
+      Builder.CreateAdd(Value29, ConstantInt64(Ctx, 1), "", true, true);
   // %33 = icmp eq i64 %32, 100
   auto *Value33 = Builder.CreateICmpEQ(Value32, ConstantInt64(Ctx, 100));
   // br i1 %33, label %77, label %34
@@ -441,7 +443,8 @@ int main() {
   Builder.SetInsertPoint(BB.at(23));
 
   // %24 = add nuw nsw i64 %30, 1
-  auto *Value24 = Builder.CreateNUWAdd(Value30, ConstantInt64(Ctx, 1));
+  auto *Value24 =
+      Builder.CreateAdd(Value30, ConstantInt64(Ctx, 1), "", true, true);
   // br i1 %33, label %116, label %25
   Builder.CreateCondBr(Value33, BB.at(116), BB.at(25));
   // ==========================================================================
@@ -499,9 +502,9 @@ int main() {
   // %50 = add nsw i64 %49, -1
   auto *Value50 = Builder.CreateNSWAdd(Value49, ConstantInt64(Ctx, -1));
   // %51 = getelementptr inbounds %struct.point_s, ptr @generate_points.points, i64 %49
-  auto *Value51 =
-      Builder.CreateGEP(Types.at("struct.point_s"),
-                        M->getNamedValue("generate_points.points"), {Value49});
+  auto *Value51 = Builder.CreateInBoundsGEP(
+      Types.at("struct.point_s"), M->getNamedValue("generate_points.points"),
+      {Value49});
   // %52 = load <8 x i32>, ptr %51, align 8, !tbaa !14
   auto *Value52 = Builder.CreateAlignedLoad(Int32Vec8, Value51, MaybeAlign{8});
   // %53 = shufflevector <8 x i32> %52, <8 x i32> poison, <4 x i32> <i32 0, i32 2, i32 4, i32 6>
@@ -519,7 +522,7 @@ int main() {
   // %57 = add nsw <4 x i32> %54, %46
   auto *Value57 = Builder.CreateNSWAdd(Value54, Value46);
   // %58 = sdiv <4 x i32> %57, <i32 2, i32 2, i32 2, i32 2>
-  auto *PlusTwo = ConstantInt32(Ctx, -2);
+  auto *PlusTwo = ConstantInt32(Ctx, 2);
   auto *Value58 = Builder.CreateSDiv(
       Value57, ConstantVector::get({PlusTwo, PlusTwo, PlusTwo, PlusTwo}));
   // %59 = sub nsw <4 x i32> %46, %54
@@ -532,7 +535,7 @@ int main() {
   // %62 = mul nsw <4 x i32> %58, %59
   auto *Value62 = Builder.CreateNSWMul(Value58, Value59);
   // %63 = mul <4 x i32> %56, %60
-  auto *Value63 = Builder.CreateNSWMul(Value56, Value60);
+  auto *Value63 = Builder.CreateMul(Value56, Value60);
   // %64 = add <4 x i32> %62, %63
   auto *Value64 = Builder.CreateAdd(Value62, Value63);
   // %65 = getelementptr inbounds [100 x [99 x %struct.line_s]], ptr @compute_normals.perps, i64 0, i64 %29, i64 %50
@@ -556,7 +559,7 @@ int main() {
   // store <12 x i32> %68, ptr %65, align 4, !tbaa !14
   Builder.CreateAlignedStore(Value68, Value65, MaybeAlign{4});
   // %69 = add nuw i64 %48, 4
-  auto *Value69 = Builder.CreateNSWAdd(Value48, ConstantInt64(Ctx, 4));
+  auto *Value69 = Builder.CreateNUWAdd(Value48, ConstantInt64(Ctx, 4));
   // %70 = icmp eq i64 %69, %41
   auto *Value70 = Builder.CreateICmpEQ(Value69, Value41);
   // br i1 %70, label %71, label %47, !llvm.loop !16
@@ -609,7 +612,7 @@ int main() {
   // %18 = phi i64 [ 0, %77 ], [ %113, %105 ]
   auto *Value18 = Builder.CreatePHI(Int64Ty, 2);
   // %19 = icmp eq i64 %79, 0
-  auto *Value19 = Builder.CreateICmpEQ(Value79, ConstantInt64(Ctx, 100));
+  auto *Value19 = Builder.CreateICmpEQ(Value79, ConstantInt64(Ctx, 0));
   // br i1 %19, label %23, label %20
   Builder.CreateCondBr(Value19, BB.at(23), BB.at(20));
   // ==========================================================================
@@ -701,7 +704,8 @@ int main() {
   // store i32 %101, ptr %102, align 4, !tbaa !22
   Builder.CreateAlignedStore(Value101, Value102, MaybeAlign{4});
   // %103 = add nuw nsw i64 %84, 1
-  auto *Value103 = Builder.CreateNUWAdd(Value84, ConstantInt64(Ctx, 1));
+  auto *Value103 =
+      Builder.CreateAdd(Value84, ConstantInt64(Ctx, 1), "", true, true);
   // %104 = icmp eq i64 %103, 100
   auto *Value104 = Builder.CreateICmpEQ(Value103, ConstantInt64(Ctx, 100));
   // br i1 %104, label %75, label %83, !llvm.loop !23
@@ -748,7 +752,8 @@ int main() {
                    ConstantInt::getFalse(Ctx)})
       ->setTailCall(true);
   // %113 = add nuw nsw i64 %106, 2
-  auto *Value113 = Builder.CreateNUWAdd(Value106, ConstantInt64(Ctx, 2));
+  auto *Value113 =
+      Builder.CreateAdd(Value106, ConstantInt64(Ctx, 2), "", true, true);
   // %114 = add i64 %107, 2
   auto *Value114 = Builder.CreateAdd(Value107, ConstantInt64(Ctx, 2));
   // %115 = icmp eq i64 %114, %82
@@ -1679,7 +1684,7 @@ int main() {
   // %394 = mul nsw i32 %393, %381
   auto *Value394 = Builder.CreateNSWMul(Value393, Value381);
   // %395 = add nsw i32 %392, %378
-  auto *Value395 = Builder.CreateNSWAdd(Value393, Value378);
+  auto *Value395 = Builder.CreateNSWAdd(Value392, Value378);
   // %396 = mul nsw i32 %395, %384
   auto *Value396 = Builder.CreateNSWMul(Value395, Value384);
   // %397 = add nsw i32 %396, %394
@@ -1807,7 +1812,8 @@ int main() {
   Builder.SetInsertPoint(BB.at(431));
 
   // tail call void @update_screen() #4
-  Builder.CreateCall(UpdateScreen->getFunctionType(), UpdateScreen);
+  Builder.CreateCall(UpdateScreen->getFunctionType(), UpdateScreen)
+      ->setTailCall(true);
   // br label %464
   Builder.CreateBr(BB.at(464));
   // ==========================================================================
@@ -2032,11 +2038,13 @@ int main() {
   // %499 = tail call i32 @llvm.vector.reduce.add.v4i32(<4 x i32> %498)
   auto *Value499 = Builder.CreateCall(VectorReduceAdd->getFunctionType(),
                                       VectorReduceAdd, {Value498});
+  Value499->setTailCall(true);
   // %500 = add <4 x i32> %492, %491
   auto *Value500 = Builder.CreateAdd(Value492, Value491);
   // %501 = tail call i32 @llvm.vector.reduce.add.v4i32(<4 x i32> %500)
   auto *Value501 = Builder.CreateCall(VectorReduceAdd->getFunctionType(),
                                       VectorReduceAdd, {Value500});
+  Value501->setTailCall(true);
   // %502 = icmp eq i64 %475, %472
   auto *Value502 = Builder.CreateICmpEQ(Value475, Value472);
   // br i1 %502, label %519, label %503
@@ -2273,8 +2281,6 @@ int main() {
   bool IsBroken = verifyModule(*M.get(), &errs());
   if (IsBroken)
     return 1;
-
-  M->print(outs(), nullptr);
 
   InitializeNativeTarget();
   InitializeNativeTargetAsmPrinter();
