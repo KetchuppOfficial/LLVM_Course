@@ -1,5 +1,6 @@
 #include <array>
 #include <cassert>
+#include <cstddef>
 #include <memory>
 #include <string_view>
 #include <unordered_map>
@@ -2277,27 +2278,19 @@ int main() {
 
   ExecutionEngine *EE = EngineBuilder(std::move(M)).create();
 
-  EE->InstallLazyFunctionCreator([](const std::string &FnName) -> void * {
-    if (FnName == "set_color") {
-      return reinterpret_cast<void *>(set_color);
-    }
-    if (FnName == "draw_point") {
-      return reinterpret_cast<void *>(draw_point);
-    }
-    if (FnName == "draw_line") {
-      return reinterpret_cast<void *>(draw_line);
-    }
-    if (FnName == "update_screen") {
-      return reinterpret_cast<void *>(update_screen);
-    }
-    if (FnName == "Rand") {
-      return reinterpret_cast<void *>(Rand);
-    }
-    if (FnName == "atan2_int") {
-      return reinterpret_cast<void *>(atan2_int);
-    }
-    return nullptr;
-  });
+  std::unordered_map<std::string, void *> Functions = {
+      {"set_color", reinterpret_cast<void *>(set_color)},
+      {"draw_point", reinterpret_cast<void *>(draw_point)},
+      {"draw_line", reinterpret_cast<void *>(draw_line)},
+      {"update_screen", reinterpret_cast<void *>(update_screen)},
+      {"Rand", reinterpret_cast<void *>(Rand)},
+      {"atan2_int", reinterpret_cast<void *>(atan2_int)}};
+
+  EE->InstallLazyFunctionCreator(
+      [&Functions](const std::string &FnName) -> void * {
+        auto It = Functions.find(FnName);
+        return It == Functions.end() ? nullptr : It->second;
+      });
 
   EE->finalizeObject();
 
