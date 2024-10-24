@@ -9,7 +9,7 @@ endif()
 find_package(LLVM 18.1.3 REQUIRED)
 
 set(SOURCE_DIR ${PROJECT_SOURCE_DIR}/src)
-set(APP_DIR ${PROJECT_SOURCE_DIR}/../00-graphics_application)
+set(APP_DIR ${PROJECT_SOURCE_DIR}/../00-graphics-application)
 set(APP_SOURCE_DIR ${APP_DIR}/src)
 set(APP_INCLUDE_DIR ${APP_DIR}/include)
 
