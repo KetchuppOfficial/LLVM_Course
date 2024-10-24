@@ -53,16 +53,16 @@ TypesMap defineStructs(LLVMContext &Ctx) {
       StructType::create(Ctx, "struct.tagged_point_s"),
       StructType::create(Ctx, "struct.line_s")};
 
-  auto *I32Type = Type::getInt32Ty(Ctx);
+  auto *Int32Ty = Type::getInt32Ty(Ctx);
 
   // %struct.point_s = type { i32, i32 }
-  TypesArr[0]->setBody({I32Type, I32Type});
+  TypesArr[0]->setBody({Int32Ty, Int32Ty});
   // %struct.polygon_s = type { [104 x %struct.point_s], i32 }
-  TypesArr[1]->setBody({ArrayType::get(TypesArr[0], 104), I32Type});
+  TypesArr[1]->setBody({ArrayType::get(TypesArr[0], 104), Int32Ty});
   // %struct.tagged_point_s = type { %struct.point_s, i32, i32 }
-  TypesArr[2]->setBody({I32Type, I32Type, I32Type});
+  TypesArr[2]->setBody({TypesArr[0], Int32Ty, Int32Ty});
   // %struct.line_s = type { i32, i32, i32 }
-  TypesArr[3]->setBody({TypesArr[0], I32Type, I32Type});
+  TypesArr[3]->setBody({Int32Ty, Int32Ty, Int32Ty});
 
   TypesMap Types;
   for (auto *StType : TypesArr) {
@@ -105,15 +105,6 @@ void createGlobalVariables(LLVMContext &Ctx, Module *M, const TypesMap &Types) {
   Cells->setUnnamedAddr(GlobalValue::UnnamedAddr::Global);
   Cells->setInitializer(Constant::getNullValue(Cells->getValueType()));
 
-  // @center = internal unnamed_addr global %struct.point_s zeroinitializer, align 8
-  auto *Center =
-      dyn_cast<GlobalVariable>(M->getOrInsertGlobal("center", PointSTy));
-  assert(Center);
-  Center->setAlignment(MaybeAlign{8});
-  Center->setLinkage(GlobalValue::InternalLinkage);
-  Center->setUnnamedAddr(GlobalValue::UnnamedAddr::Global);
-  Center->setInitializer(Constant::getNullValue(Center->getValueType()));
-
   // @get_cells.intersections = internal global <{ %struct.tagged_point_s, %struct.tagged_point_s, %struct.tagged_point_s, %struct.tagged_point_s, [5098 x %struct.tagged_point_s] }> <{ %struct.tagged_point_s { %struct.point_s zeroinitializer, i32 -4, i32 -3 }, %struct.tagged_point_s { %struct.point_s { i32 720, i32 0 }, i32 -4, i32 -2 }, %struct.tagged_point_s { %struct.point_s { i32 720, i32 720 }, i32 -2, i32 -1 }, %struct.tagged_point_s { %struct.point_s { i32 0, i32 720 }, i32 -1, i32 -3 }, [5098 x %struct.tagged_point_s] zeroinitializer }>, align 16
   auto *Intersections = dyn_cast<GlobalVariable>(M->getOrInsertGlobal(
       "get_cells.intersections",
@@ -143,7 +134,17 @@ void createGlobalVariables(LLVMContext &Ctx, Module *M, const TypesMap &Types) {
            TaggedPointSTy,
            {ConstantStruct::get(
                 PointSTy, {ConstantInt32(Ctx, 0), ConstantInt32(Ctx, 720)}),
-            ConstantInt32(Ctx, -1), ConstantInt32(Ctx, -3)})}));
+            ConstantInt32(Ctx, -1), ConstantInt32(Ctx, -3)}),
+       Constant::getNullValue(ArrayType::get(TaggedPointSTy, 5098))}));
+
+  // @center = internal unnamed_addr global %struct.point_s zeroinitializer, align 8
+  auto *Center =
+      dyn_cast<GlobalVariable>(M->getOrInsertGlobal("center", PointSTy));
+  assert(Center);
+  Center->setAlignment(MaybeAlign{8});
+  Center->setLinkage(GlobalValue::InternalLinkage);
+  Center->setUnnamedAddr(GlobalValue::UnnamedAddr::Global);
+  Center->setInitializer(Constant::getNullValue(Center->getValueType()));
 
   // @compute_normals.perps = internal unnamed_addr global [100 x [99 x %struct.line_s]] zeroinitializer, align 16
   auto *Perps = dyn_cast<GlobalVariable>(
@@ -2272,6 +2273,8 @@ int main() {
   bool IsBroken = verifyModule(*M.get(), &errs());
   if (IsBroken)
     return 1;
+
+  M->print(outs(), nullptr);
 
   InitializeNativeTarget();
   InitializeNativeTargetAsmPrinter();
