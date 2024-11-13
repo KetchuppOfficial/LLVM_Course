@@ -1,21 +1,19 @@
 #ifndef INCLUDE_GRAPHICS_H
 #define INCLUDE_GRAPHICS_H
 
-enum { kWidth = 720, kHeight = 720, kMargin = 10 };
+enum { kWidth = 720, kHeight = 720 };
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int init_screen(void);
+int initScreen(void);
+void updateScreen(void);
 
-void set_color(int r, int g, int b);
-void draw_point(int x, int y);
-void draw_line(int x_1, int y_1, int x_2, int y_2);
-void update_screen(void);
+void putPixel(int X, int Y);
+void setColor(int R, int G, int B);
 
 int Rand(void);
-int atan2_int(int x, int y);
 
 #ifdef __cplusplus
 } // extern "C"
