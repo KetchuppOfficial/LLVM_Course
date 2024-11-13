@@ -1,12 +1,12 @@
 #include "graphics.h"
 
-void lloyd_relaxation(void);
+void lloydRelaxation(void);
 
 int main(void) {
-  int res = init_screen();
+  int res = initScreen();
   if (res)
     return 1;
 
-  lloyd_relaxation();
+  lloydRelaxation();
   return 0;
 }

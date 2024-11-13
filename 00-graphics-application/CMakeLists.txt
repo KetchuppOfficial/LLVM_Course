@@ -7,7 +7,9 @@ if (${PROJECT_SOURCE_DIR} STREQUAL ${PROJECT_BINARY_DIR})
     message(FATAL_ERROR "In-source build is forbidden")
 endif()
 
-find_package(SDL2 REQUIRED)
+if (NOT ${CMAKE_C_COMPILER_ID} STREQUAL "Clang")
+    message(FATAL_ERROR "Only clang may be used as C compiler")
+endif()
 
 set(CMAKE_C_STANDARD          17)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -16,6 +18,8 @@ set(CMAKE_C_EXTENSIONS        OFF)
 set(SOURCE_DIR ${PROJECT_SOURCE_DIR}/src)
 set(INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
 set(INSTALL_DIR ${PROJECT_SOURCE_DIR}/bin)
+
+find_package(SDL2 REQUIRED)
 
 aux_source_directory(${SOURCE_DIR} SRC)
 
