@@ -71,10 +71,10 @@ def main():
         window_stats = sorted(window_stats.items(), key = lambda item : item[1])
         n_stats = len(window_stats)
 
-        if args.bars == None or args.bars < n_stats:
-            window_stats = dict(window_stats)
-        else:
+        if args.bars < n_stats:
             window_stats = dict(window_stats[n_stats - args.bars : n_stats])
+        else:
+            window_stats = dict(window_stats)
 
         plt.figure(figsize = (16, 9), dpi = 100, layout = "compressed")
         plt.title("LLVM instructions statistics")
