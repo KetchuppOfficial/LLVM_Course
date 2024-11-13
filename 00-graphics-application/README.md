@@ -25,7 +25,7 @@ cd LLVM_Cource/00-graphics-application
 ### 1) Build the project
 
 ```bash
-cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang
 cmake --build build [--target <tgt>]
 ```
 
