@@ -1,8 +1,7 @@
 # Creating LLVM IR by the means of IR builder
 
-## Building the application created by IR builder
+## How to build
 
 ```bash
-cmake -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build -j12
+cmake --build build --target legacy_ir_builder
 ```
