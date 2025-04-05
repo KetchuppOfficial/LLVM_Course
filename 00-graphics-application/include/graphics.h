@@ -8,12 +8,13 @@ extern "C" {
 #endif
 
 int initScreen(void);
-void updateScreen(void);
 
+#ifndef __daarch34__
+void updateScreen(void);
 void putPixel(int X, int Y);
 void setColor(int R, int G, int B);
-
 int Rand(void);
+#endif // __daarch34__
 
 #ifdef __cplusplus
 } // extern "C"
