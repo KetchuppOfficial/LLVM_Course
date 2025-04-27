@@ -1,4 +1,8 @@
+#ifdef __daarch34__
+#define assert(expr) (void)(0)
+#else
 #include <assert.h>
+#endif // __daarch34__
 
 #include "graphics.h"
 
